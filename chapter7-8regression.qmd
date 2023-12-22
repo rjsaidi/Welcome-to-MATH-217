@@ -1,0 +1,404 @@
+---
+title: "Ch 7 and 8 linear(and multiple linear) regression"
+author: "Rachel Saidi"
+format: docx
+editor: 
+  markdown: 
+    wrap: sentence
+---
+
+# Chapter 7 Intro to Linear Regression
+
+Work with the possum data found in the OpenIntro datasets
+
+![Hanging baby possum: <https://www.scenichudson.org/viewfinder/the-opossum-a-surprising-n-y-fan-fave/>](Fall 2023/possum_hanging.JPG){fig-alt="https://www.scenichudson.org/viewfinder/the-opossum-a-surprising-n-y-fan-fave/" width="285"}
+
+## Load tidyverse, set the working directory, and read in the possum data
+
+```{r message = FALSE, warning =FALSE}
+library(tidyverse)
+library(tidymodels)
+setwd("C:/Users/rsaidi/Dropbox/Rachel/MontColl/Datasets/Datasets")
+possum <- read_csv("possum_openintro.csv")
+```
+
+## Explore the possum dataset variables
+
+note that there are 104 observations with 8 variables.
+All variables are quantitative except "pop"
+
+```{r}
+head(possum)
+```
+
+## Create a scatterplot of head length to total body length
+
+```{r}
+ggplot(possum, aes(x=head_l, y=total_l))+
+  geom_point() +
+  theme_bw()+
+  labs(x="Possum Head Length (cm)", 
+       y="Possum Total Body Length (cm)",
+       title = "Scatterplot of Possum Head to Total Body Length",
+       caption = "Source: Lindenmayer, D. B. et al, 1995. Australian Journal of Zoology 43")
+```
+
+We can see a positive association: as head length increases, total body length tends to increase as well.
+
+## Create a linear model to show this association
+
+lm stands for linear model.
+The linear model form is: y \~ x
+
+```{r}
+fit1 <- lm(data = possum, total_l ~ head_l) 
+summary(fit1)
+```
+
+We can see that this linear equation is:
+
+y-hat = mx + b total_l = 0.8337(head_l)+ 9.8882
+
+• This means that for each additional cm increase in head length, the total body length increases by 0.8337 cm.
+• The y-intercept is 9.8882 cm, meaning that when the head length is 0 cm, the total body length is 9.8882 cm.
+• The p-value for head_l to predict total_l is very small, and therefore head_l is an important predictor of total_l.
+• The p-value for the overall model is very small, so the model is meaningful.
+• Finally, the adjusted R\^2 is .4725.
+We will discuss the meaning of this value below.
+
+## Adjusted
+
+$R^2$
+
+**The adjusted** $R^2$ value may be interpreted as follows:
+
+**\_\_\_\_% of the variation in the observations may be explained by this model.**
+
+*For this model, 47% of the variation in the observations may be explained by this model.*
+
+## Show the linear regression line on the scatterplot
+
+```{r}
+ggplot(possum, aes(x=head_l, y=total_l))+
+  geom_point() +
+  geom_smooth(method = "lm") +
+  theme_bw()+
+  labs(x="Possum Head Length (cm)", 
+       y="Possum Total Body Length (cm)",
+       title = "Scatterplot of Possum Head to Total Body Length",
+       caption = "Source: Lindenmayer, D. B. et al, 1995. Australian Journal of Zoology 43")
+```
+
+## The Gray Band
+
+The gray area around the linear regression line is the standard error (se) band.
+We can remove it with: "se = FALSE"
+
+```{r}
+ggplot(possum, aes(x=head_l, y=total_l))+
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_bw()+
+  labs(x="Possum Head Length (cm)", 
+       y="Possum Total Body Length (cm)",
+       title = "Scatterplot of Possum Head to Total Body Length",
+       caption = "Source: Lindenmayer, D. B. et al, 1995. Australian Journal of Zoology 43")
+```
+
+## What if the relationships are different between male and female possums?
+
+Add color and shape for the sex to distinguish males and females (sex is a categorical variable)
+
+```{r}
+ggplot(possum, aes(x=head_l, y=total_l, color = sex))+
+  geom_point(aes(shape = sex)) +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_bw()+
+  labs(x="Possum Head Length (cm)", 
+       y="Possum Total Body Length (cm)",
+       title = "Scatterplot of Possum Head to Total Body Length",
+       caption = "Source: Lindenmayer, D. B. et al, 1995. Australian Journal of Zoology 43")
+```
+
+We can explore the values for the equation of this more complex plot, but just looking at the lines, the female line has a much steeper slope, indicating that as female head length increase, there is a much greater female total body length increase than for males.
+
+## Explore how age is associated with the two variables
+
+Add color by age (which is a quantitative variable).
+Add alpha (the level of transparency).
+Alpha values go between zero and 1.
+Values closer to zero are MORE transparent.
+
+```{r}
+ggplot(possum, aes(x=head_l, y=total_l))+
+  geom_point(aes(color = age),alpha = 0.5) +
+  scale_color_gradient(low = "green",high = "purple",)+
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_bw()+
+  labs(x="Possum Head Length (cm)", 
+       y="Possum Total Body Length (cm)",
+       title = "Scatterplot of Possum Head to Total Body Length",
+       caption = "Source: Lindenmayer, D. B. et al, 1995. Australian Journal of Zoology 43")
+```
+
+## Finally, plot the residuals
+
+```{r}
+ggplot(data = fit1,  aes(x = .fitted, y = .resid)) +
+  geom_point() +
+  geom_hline(yintercept = 0, color = "red", linewidth = 1.5) +
+  theme_bw() +
+  labs(x="Linear Model Fitted Values", y="Model Residual Values",
+       title = "Residuals to Fitted Values for Linear Regression Model")
+```
+
+## What does this residuals plot show?
+
+The residuals plot should show points scattered in no particular pattern about the horizontal line at y=0.
+
+## Visualizing parallel slopes models
+
+Three variables, one plot
+
+In this scatterplot, we use color to differentiate the possums age 3 from age 6.
+
+In this manner, we have depicted three variables---two numeric and one categorical---on the same scatterplot.
+Thus, this plot will enable us to visualize our parallel slopes model in the data space.
+
+```{r}
+newdata <- possum |>
+  filter(age %in% c(3, 6))
+
+plotage1 <- ggplot(data = newdata, aes(
+  x = head_l, y = total_l, color = factor(age))) + 
+  geom_point()
+plotage1
+```
+
+## Create the linear model
+
+```{r}
+mod <- lm(total_l ~ head_l + factor(age), data = newdata)
+summary(mod)
+```
+
+## Our model is:
+
+total_length =β_0 + β_1(head_length) + β_2(age_6)
+
+total_length =6.5115 + 0.8778(head_length) + 0.9437(age_6)
+
+## Now use the function, augment, to provide a detailed statistical summary of the model values including the fitted y-values and the residuals.
+
+```{r}
+augment(mod)
+```
+
+## Now plot the parallel slopes for ages 3 and 6
+
+```{r}
+plotage2 <- ggplot(data = newdata, aes(
+  x = head_l, y = total_l, color = factor(age))) + 
+  geom_point() +
+  geom_line(data = augment(mod), aes(y = .fitted, color = `factor(age)`))
+plotage2
+```
+
+## Using categorical predictors with only 2 factors
+
+What if we only wanted to predict total body length of the possums based on sex?
+We can use what is know as a "dummy variable" - a categorical variable - as a predictor of total body length.
+
+```{r}
+ggplot(possum, aes(x=sex, y=total_l))+
+  geom_point()+
+   theme_bw()+
+  labs(x="Possum Sex", 
+       y="Possum Total Body Length (cm)",
+       title = "Scatterplot of Possum Sex to Total Body Length",
+       caption = "Source: Lindenmayer, D. B. et al, 1995. Australian Journal of Zoology 43")
+```
+
+## You might be surprised, but we can create a linear model of this relationship
+
+Create the linear model using sex and total body length
+
+```{r}
+fit2 <- lm(data = possum, total_l ~ sex)
+summary(fit2)
+```
+
+## What happened in this model?
+
+Notice that the model ONLY SHOWS sexm, meaning the male slope.
+This means that because female is alphabetically before males, R coded females as zeros and males as ones.
+sex_f (females): the slope for female relationship to body length is embedded in the intercept.
+This is called a **reference level.**
+
+This also means that, because the male slope is negative, males total body length decreases by 1.4 cm as compared to female body length.
+
+## Visualize this with a plot and linear regression line
+
+Recode sex such that male = 1 and female = 0
+
+```{r}
+possum$sex2<-ifelse(possum$sex=="m", 1, 0)
+```
+
+```{r}
+ggplot(possum, aes(x=sex2, y=total_l))+
+  geom_point()+
+  geom_smooth(method = "lm", se = FALSE)+
+   theme_bw()+
+  labs(x="Possum Sex", 
+       y="Possum Total Body Length (cm)",
+       title = "Scatterplot of Possum Sex to Total Body Length",
+       caption = "Source: Lindenmayer, D. B. et al, 1995. Australian Journal of Zoology 43")
+```
+
+Ignoring head length and only using sex as a predictor, males overall have shorter body lengths than females.
+
+**What is very important to notice, is that one single variable cannot possibly completely explain a possum's total body length. Therefore, in Chapter 8, we will explore multiple factors causing a response variable.**
+
+# Chapter 8 - Multiple Linear Regression
+
+## Continue with Possum Dataset
+
+```{r}
+head(possum)
+```
+
+## Explore the variables in the dataset
+
+```{r}
+names(possum)
+```
+
+There are only two types - "Vic" and "other"
+
+## Predict total body length based on all variables in the dataset (excluding total_l):
+
+"site" "pop" "sex" "age" "head_l" "skull_w" "tail_l" "sex2"
+
+## Explore the quantitative variables to determine if any correlation
+
+Use a correlation plot to explore the correlation among all variables.
+This correlation plot shows pairwise results, but in a heatmap of correlation values.
+
+```{r}
+#install.packages("GGally")
+library(GGally)
+#remove na values from age
+possum2 <- possum %>% filter(!is.na(age))
+ggpairs(possum2, c("age","head_l","skull_w","tail_l" ))
+```
+
+## What does this matrix of plots show?
+
+When creating multiple regression models, we have to ensure there is no **collinearity**
+
+### Collinearity
+
+The key goal of multiple regression analysis is to isolate the relationship between EACH INDEPENDENT VARIABLE and the DEPENDENT VARIABLE. COLLINEARITY means explanatory variables **are correlated** and thus NOT INDEPENDENT. The more correlated the variables, the more difficult it is to change one variable without changing the other.
+This is important to keep in mind.
+The two different matrices gave slightly different correlation information.
+We are concerned with dependence of 2 or more variables.
+
+We can see that head length is strongly correlated with skull width, which is not surprising.
+Therefore, we would **NOT** want to include both variables in the final model.
+We will decide which to exclude soon.
+
+## Start with a "full model" of predictors for the total body length
+
+With multiple regression, there are several strategies for comparing variable inputs into a model.
+I will show you backward elimination.
+In backward elimination, start with all possible predictor variables with your response variable.
+In this case, we will use: site + pop + sex + age + head_l + skull_w + tail_l
+
+Perform a model fit with all predictors.
+
+1.  Look at the p-value for each variable - if it is relatively small ( \< 0.10), then it is likely contributing to the model.
+
+2.  Look at the output for the Adjusted R-Squared value at the bottom of the output.
+    The interpretation is: \_\_% (from the adjusted r-squared value) of the variation in the observations may be explained by this model.
+    The higher the adjusted R-squared value, the better the model.
+    We use the adjusted R-squared value because it compensates for more predictors mathematically increasing the normal R-squared value.
+
+3.  Check out the residual plots (we will do this in the second chunk below).
+
+```{r}
+full_model <- lm(data = possum, total_l ~ site + pop + sex + age + head_l + skull_w + tail_l)
+summary(full_model)
+```
+
+## What does this mean?
+
+Look at the p-values to find which variables are **LEAST** significant.
+Age, population, and skull width seem least useful.
+Also look at the adjusted R-squared value: 0.7506.
+This means approximately 75% of the variation in the observations may be explained by this model.
+It is a good value, but we can possibly improve it.
+
+## Now look at the diagnostic plots
+
+```{r}
+#install.packages("ggfortify")
+library(ggfortify)  # this will run the autoplot function
+autoplot(full_model, nrow=2, ncol=2)
+```
+
+## What do the diagnostic plots mean?
+
+1.  Residual plot essentially indicates whether a linear model is appropriate - you can see this by the blue line showing relatively horizontal.
+    If it is not relatively horizontal, a linear plot may not be appropriate.
+
+2.  QQPlot indicates whether the distribution is relatively normal.
+    Observations that might be outliers are indicated by their row number.
+
+3.  Scale-Location indicates homogeneous variance (homoscedasticity).
+    Influential observations that are skewing the variance distribution are indicated.
+
+4.  Cook's Distance indicates which outliers have high leverage, meaning that some outliers may not cause the model to violate basic assumptions required for the regression analysis (see #1-3).
+    If outliers have high leverage, then they may be causing problems for your model.
+    You can try to remove those observations, especially if they appear in any of the other 3 plots above.
+
+**Generally, this model's diagnostic plots all indicate the model is pretty good. We will work to improve it now.**
+
+## Simplfy the model
+
+We will remove "age" from the model, rerun it, and then check the 3 indicators: p-values, Adj R-Squared, and diagnostic plots
+
+```{r}
+full_2 <- lm(data = possum2, total_l ~ site + pop + sex + head_l + skull_w + tail_l)
+summary(full_2)
+autoplot(full_2, nrow=2, ncol=2)
+```
+
+## Simplify further - remove pop and skull_w (esp since skull_w is collinear to head_l)
+
+```{r}
+full_3 <- lm(data = possum2, total_l ~ site + sex + head_l + tail_l)
+summary(full_3)
+```
+
+## Parsimony
+
+This model may be the simplest form (parsimonious).
+We can try one more time to remove "sex" from the model and check the adj r-squared, which is already improved to 75.7%.
+
+```{r}
+full_4 <- lm(data = possum2, total_l ~ site + head_l + tail_l)
+summary(full_4)
+```
+
+Because the adj r-squared decreased, this suggests the model is better with sex included.
+
+Therefore **full_3** would be the likely best model.
+
+```         
+        Estimate Std. Error t value Pr(>|t|)    
+```
+
+(Intercept) -5.63525 5.97554 -0.943 0.348\
+site -0.73736 0.10580 -6.970 3.86e-10 ***sexm -0.66747 0.44674 -1.494 0.138\
+head_l 0.52809 0.06638 7.955 3.34e-12*** tail_l 1.26869 0.12525 10.129 \< 2e-16 \*\*\*

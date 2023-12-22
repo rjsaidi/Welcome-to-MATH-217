@@ -1,0 +1,299 @@
+---
+title: "chapter 9 logistic regression"
+author: Rachel Saidi
+format: docx
+---
+
+## Load library tidyverse and resume dataset
+
+![](Fall 2023/resume.JPG){width="198"}
+
+Set your working directory to find the saved dataset and use "head" to view the variables in the dataset
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(tidymodels)
+setwd("C:/Users/rsaidi/Dropbox/Rachel/MontColl/Datasets/Datasets")
+resume <- read_csv("resume.csv")
+head(resume)
+```
+
+```{r}
+unique(resume$received_callback)
+```
+
+## List all variables in the dataset
+
+```{r}
+names(resume)
+```
+
+## Visualizing the data
+
+Let's start by looking at whether an applicant received a callback based on years experience.
+
+## Ensure the response variable is binary
+
+Check out **received_callback** to be sure that the values are zeros or ones. In our case, we are fine. If they are not, you can use the code below to change it.
+
+data \<- data \|\> mutate(newvar = ifelse(oldvar == "yes", 1, 0))
+
+Note that in the plot below, we use the **geom_jitter()** function to create the illusion of separation in our data. Because the y value is categorical, all of the points would either lie exactly on "dead" or "alive", making the individual points hard to see. To counteract this, geom_jitter() will move the points a small random amount up or down.
+
+```{r}
+ggplot(data = resume, aes(x = years_experience, y = received_callback)) + 
+  geom_jitter(width = .05, height = 0.05, alpha = 0.3)
+```
+
+## Fit a logistic regression model
+
+Start with the simple premise above, that years experience is associated with the likelihood of receiving a callback.
+
+```{r}
+plot_log <- ggplot(data = resume, aes(y = received_callback, x = years_experience)) + 
+  geom_jitter(width = 0, height = 0.05, alpha = 0.5) +
+  geom_smooth(method = "glm", se = FALSE, method.args = list(family = "binomial"))
+plot_log
+```
+
+geom_smooth(method = "glm") creates a **sigmoid** curve, like a stretched-out S. This curve fits to the binary values (zeros and ones plotted). It shows the predicted probabilities of receiving a callback, based on years experience. You can see that even a candidate with 20 years of experience has about a 12.5% chance of receiving a callback.
+
+## Odds scale
+
+To combat the problem of the scale of the y variable, we can change the scale of the variable on the y-axis. Instead of thinking about the probability of receiving a callback, we can think about the odds. While these two concepts are often conflated, they are not the same. They are however, related by the simple formula below. The odds of a binary event are the ratio of how often it happens, to how often it doesn't happen.
+
+odds(y-hat)= y-hat / (1−y-hat) = exp(β_0+β_1⋅x)
+
+Thus, if the probability of receiving a callback is 10%, then the odds of receiving a callback are .1/(1-.1) = 1:9
+
+Odds are commonly used to express uncertainty in a variety of contexts.
+
+```{r}
+# using base r logistic regression
+
+fit_log <- glm(data = resume, received_callback ~ years_experience, family = binomial())
+summary(fit_log)
+```
+
+*equation log_odds(received_callback) = -2.7596+0.039(years_experience)*
+
+# Use the **Tidymodels** package to create a model
+
+## Create the testing and training data by splitting
+
+```{r}
+# convert received_callback to categorical variable
+resume$received_callback <- as.factor(resume$received_callback)
+set.seed(123)
+
+#initial_split creates a single binary split of the data into a training set and testing set (the default is 75% training 25% testing)
+res_splits<- initial_split(resume, strata = received_callback)
+
+callback_train <- training(res_splits)
+callback_test  <- testing(res_splits)
+```
+
+## Calculate training set proportions by callbacks
+
+```{r}
+callback_train |>
+  group_by(received_callback) |>
+  tally() |>
+  mutate(prop = n/sum(n))
+```
+
+We see that in the training set, 8% of applicants did receive callbacks.
+
+## logistic model
+
+```{r}
+logit_fit <- 
+  logistic_reg(mode = "classification") |>
+  set_engine(engine = "glm") |> 
+  fit(received_callback ~ years_experience, data = callback_train)
+logit_fit
+```
+
+## Prediction
+
+To get predicted values we use the function **predict**.
+
+```{r}
+## get prediction on train set
+pred_logit_train <- predict(logit_fit, new_data = callback_train)
+## get prediction on test set
+pred_logit_test <- predict(logit_fit, new_data = callback_test)
+## get probabilities on test set
+prob_logit_test <- predict(logit_fit, new_data = callback_test, type="prob")
+```
+
+## Model performance
+
+**yardstick** is a package to get metrics on model performance. By default on classification problem yardstick::metrics returns accuracy and kappa.
+
+```{r}
+library(yardstick)
+metrics(bind_cols(callback_test, pred_logit_test), truth = received_callback, estimate = .pred_class)
+```
+
+The accuracy is 91.4% - very close to the original data (1- p_hat).
+
+## The null model
+
+It will be useful to have our null model stored as a model object. We can create such an object using tidymodels by specifying a logistic regression model with no explanatory variables. The computational engine is glm because glm() is the name of the R function that actually fits vocab("generalized linear models") (of which logistic regression is a special case).
+
+```{r}
+mod_null <- 
+  logistic_reg(mode = "classification") |>
+  set_engine("glm") |>
+  fit(received_callback ~ 1, data = callback_train)
+mod_null
+```
+
+## Compute the accuracy of the null model
+
+According to Wikipedia, *accuracy* is how close a given set of measurements (observations or readings) are to their true value.
+
+```{r}
+pred <- callback_train |>
+  select(received_callback, years_experience) |>
+  bind_cols(predict(mod_null, new_data = callback_train, type = "class")) |>
+  rename(mod_null = .pred_class)
+accuracy(pred, received_callback, mod_null)
+```
+
+The accuracy estimate of this null model is almost the same: = 92.1%.
+
+## Create a confusion matrix
+
+This is a two-way table that counts how often our model made the correct prediction. Note that there are two different types of mistakes that our model can make: predicting receiving a callback when a callback was not received (a Type I error), and predicting not receiving a callback when the callback was received (a Type II error).
+
+```{r}
+confusion_null <- pred |>
+  conf_mat(truth = received_callback, estimate = mod_null)
+confusion_null
+```
+
+Note that the null model predicts that *NONE* do not receive a callback (receives_callback = 0), so it makes many *Type II errors* (false negatives) and *NONE* receive a callback (receives_callback = 1) *Type I errors* (false positives).
+
+## Build Logit Models and Predict
+
+Start by building the logit model using training data
+
+Beating the null model shouldn't be hard. Our first attempt will be to employ a simple logistic regression model. First, we'll fit the model using only one explanatory variable: years_experience. It stands to reason that more experienced people are more likely to get a job offer.
+
+```{r}
+mod_log_1 <- 
+  logistic_reg(mode = "classification") |>
+  set_engine("glm") |>
+  fit(received_callback ~ years_experience, data = callback_train)
+```
+
+## Illustrate the predicted probability
+
+Illustrate how the predicted probability of dying varies in our simple logistic regression model with respect to a person's age. Notice the sigmoid curve (in purple) - this is the shape of a logistic curve.
+
+```{r}
+train_plus <- callback_train |>
+  mutate(called = as.integer(received_callback == 1))
+
+ggplot(train_plus, aes(x = years_experience, y = called)) + 
+  geom_count(
+    position = position_jitter(width = 0, height = 0.05), 
+    alpha = 0.5 ) + 
+  geom_smooth(method = "glm", method.args = list(family = "binomial"), 
+              color = "purple", lty = 2, se = FALSE) + 
+  geom_hline(aes(yintercept = 0.5), linetype = 3) 
+```
+
+This still looks very similar to the original plot.
+
+## ROC - Receiver Operating Characteristics
+
+Receiver Operating Characteristics Curve traces the percentage of true positives accurately predicted by a given logit model as the prediction probability cutoff is lowered from 1 to 0. For a good model, as the cutoff is lowered, it should mark more of actual 1's as positives and lesser of actual 0's as 1's. So for a good model, the curve should rise steeply, indicating that the TPR (Y-Axis) increases faster than the FPR (X-Axis) as the cutoff score decreases.
+
+## AUC - Area under the curve
+
+The greater the area under the ROC curve, better the predictive ability of the model
+
+```{r}
+roc_auc(bind_cols(callback_test, prob_logit_test), truth = received_callback, .pred_1)
+
+```
+
+The AUC estimate is 43.3% - this is VERY low, meaning the model is not great for predicting probabilities.
+
+```{r}
+roc_data <- roc_curve(bind_cols(callback_test, prob_logit_test), truth = received_callback, .pred_1) 
+roc_data |>  
+  ggplot(aes(x = 1 - specificity, y = sensitivity)) +
+  geom_path() +
+  geom_abline(lty = 3) + 
+  coord_equal()+
+  ggtitle("ROC Curve")+
+  theme_bw()+
+  geom_text(x=0.2, y=.8, label="AUC = 43%", color ="purple")
+```
+
+## The Full Regression Model
+
+Computing the full logistic regression model will feel similar to the process for computing the full multiple linear regression model. We will use **GLM** to replace **LM** and we need to include **family = binomial()**
+
+```{r}
+log_mod1 <- glm(data=resume, received_callback ~ job_city + college_degree + years_experience + honors + military + has_email_address + race + gender + computer_skills + resume_quality, family = binomial())
+summary(log_mod1)
+```
+
+## Performance of Logistic Regression Model
+
+To evaluate the performance of a logistic regression model, we must consider few metrics: AIC and p-values.
+
+AIC (Akaike Information Criteria) -- The analogous metric of adjusted R² in logistic regression is AIC. AIC is the measure of fit which penalizes model for the number of model coefficients. Therefore, we always prefer model with **minimum** AIC value.
+
+## Assessing our full model
+
+1.  The AIC is 2678
+2.  The largest p-values come from college_degree and resume_quality
+
+## Remove college_degree and resume_quality and re-run the model
+
+```{r}
+log_mod2 <- glm(data=resume, received_callback ~ job_city + years_experience + honors + military + has_email_address + race + gender + computer_skills, family = binomial())
+summary(log_mod2)
+```
+
+The AIC decreased to 2675 and all p-values are relatively low.
+
+## VIF - Variance Inflation Factor
+
+Like in case of linear regression, we should check for multicollinearity in the model.
+
+One way to measure multicollinearity is the variance inflation factor (VIF), which assesses how much the variance of an estimated regression coefficient increases if your predictors are correlated.
+
+A VIF between 5 and 10 indicates high correlation that may be problematic. And if the VIF goes above 10, you can assume that the regression coefficients are poorly estimated due to multicollinearity.
+
+```{r message=FALSE}
+#install.packages("car")  #car package will calculate the VIF
+library(car)
+vif(log_mod2)
+```
+
+All X variables in the model have VIF well below 4, so log_mod2 model does not appear to have multicollinearity.
+
+## Example for predicting
+
+Use this model(log_mod2) to estimate the probability of receiving a callback for: a job in Chicago where the candidate lists 14 years' experience, no honors, no military experience, includes an email address, has computer skills, and has a first name that implies they are a White male.
+
+```{r}
+# the log odds value of the above characteristics
+-2.535-0.418+0.0196*14+0.269+0.437-0.239-0.242 
+
+# calculate the probability using the above value
+exp(-2.4536)/(1+exp(-2.4536))
+```
+
+The probability of receiving a callback for a candidate looking at a job in Chicago with 14 years' experience, no honors, no military experience, included an email address, has computer skills, and has a first name that implies they are White male is 7.92%
+
+## Overall
+
+Although this tutorial goes through many concepts that are involved with logistic regression, one of the take-aways is that there are many components involved in building the model and then testing the model.
