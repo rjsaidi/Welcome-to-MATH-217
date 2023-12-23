@@ -1,0 +1,144 @@
+---
+title: "Math217_ch5_notes"
+format: docx
+editor: visual
+---
+
+# Working with single numerical variables
+
+## Numerical variables: the distribution of shape, center, and spread
+
+When you want to know more about a function, use a question mark with the function
+
+Example: learn more about the function, boxplot
+
+```{r}
+# ?boxplot   (delete the # to run ?boxplot)
+```
+
+
+## I. Shape
+
+1. Dotplots (not necessarily the best way to show distributions)
+
+
+```{r}
+# load the vector of data for number of segments
+
+segment <- c(23, 30, 54, 28, 31, 29, 34, 35, 30, 27, 21, 43, 51, 35, 51, 49, 35, 24, 26, 29, 21, 29, 37, 27, 28, 33, 33, 23, 37, 27, 40, 48, 41, 20, 30, 57)
+```
+
+```{r}
+# stripchart is a base-R dotplot
+stripchart(segment)
+```
+
+2. Histograms are better at displaying a numerical variable's shape
+
+```{r}
+hist(segment, col = "lightblue")
+```
+
+*We can see that the distribution of this variable is right-skewed (the tail is to the right)*
+
+3. Boxplots show OTHER information about the distribution, based on the 5-number summary
+
+```{r}
+# 5-number summary + mean
+summary(segment)
+```
+
+```{r}
+# now create the boxplot using these values
+boxplot(segment, col = "lightpink")
+```
+
+* Notice that there is one upper outlier, which is 57, based on the max value from the summary output.
+
+* The median is 30.5.
+
+* The IQR (Q3-Q1 = 37.75-27 = 10.75) is the middle box
+
+```{r}
+# Rotate your boxplot horizontally and add a notch at the median.
+# Add a title (main =) and x-axis label (xlab =)
+boxplot(segment, col = "lightpink", notch = TRUE, horizontal = TRUE, main = "Notched boxplot of number of segments", xlab = "Number of Segments")
+```
+
+## II. Center
+
+The two measure of center for a numerical variable are:
+**mean** and **median**
+
+```{r}
+mean(segment)
+median(segment)
+```
+
+*When the mean and median are essentially the same value, that indicates a bell shape. When mean is greater than median (as it is in this case), the distribution is right-skewed, since the mean is dragged towards the tail.*
+
+
+## III. Spread
+
+Spread describes how wide the values are across a distribution. We can use the following:
+
+* range =  max - min
+
+* IQR =  Q3 - Q1
+
+* standard deviation - this has a complicated formula (see notes). The function in R is "sd"
+
+```{r}
+IQR(segment)
+range(segment)
+sd(segment)
+```
+
+
+## Your Turn!!!
+
+### Use the following data: sodium
+
+Sodium is a vector containing the grams of sodium in 20 cereal boxes.
+
+```{r}
+sodium <- c(0,	340,	70,	140,	200,	180,	210,	150,	100,	130,	140,	180,	190,	160,	290,	50,	220,	180,	200,	210)
+```
+
+
+## Create a chunk for each question below and use appropriate code to answer.
+
+1. Create a dotplot, histogram, and boxplot of the distribution of sodium.
+
+```{r}
+# dotplot
+```
+
+```{r}
+# histogram
+```
+
+```{r}
+# boxplot
+```
+
+
+2. Find the 5-number summary plus mean for sodium.
+
+```{r}
+
+```
+
+3. What is the IQR and sd?
+
+```{r}
+
+```
+
+4. Make a histogram or boxplot, but add a title, axis labels, and change the color.
+
+```{r}
+
+```
+
+
