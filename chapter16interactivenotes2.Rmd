@@ -1,0 +1,212 @@
+---
+title: "Chapter 16 Interactive Notes"
+author: "R Saidi"
+date: "2023-10-22"
+output:
+  word_document: default
+  html_document: default
+---
+
+## Load the libraries and data
+
+```{r}
+#| message: false
+library(tidyverse)
+library(openintro)
+library(tidymodels)
+data("resume")
+```
+
+## Rename the factor levels for callbacks
+
+```{r}
+resume1 <- resume |>
+  mutate(called = ifelse(received_callback == 1, "yes", "no"))
+```
+
+## View the counts for applicants receiving callbacks
+
+```{r}
+ggplot(resume1, aes(x = called)) +
+  geom_bar()
+```
+
+## calculate exact proportion of the sample that responded this way
+
+```{r}
+p_hat_call <- resume1 |>
+  summarize(prop_call = mean(called == "yes")) |>
+  pull()
+
+p_hat_call
+```
+
+*The proportion who received a callback in the dataset was 0.080.*
+
+### The 95% confidence interval can be calculated as the sample proportion plus or minus two standard errors of the sample proportion
+
+The bootstrap is done with the function: **specify()**
+
+### We do this many times to create many bootstrap replicate data sets.
+
+Do this with the function **generate()**
+
+### Next, for each replicate, we calculate the sample statistic, in this case: the proportion of respondents that said "yes" to receiving callbacks.
+
+Do this with the function **calculate()**
+
+```{r}
+boot_dist_call <- resume1 |>
+  specify(response = called, success = "yes") |>
+  generate(reps = 500, type = "bootstrap") |>
+  calculate(stat = "prop")
+
+boot_dist_call
+```
+
+## Plot the density curve of this distribution
+
+```{r}
+ggplot(boot_dist_call, aes(x = stat)) +
+  geom_density()
+```
+
+The standard deviation of the stat variable in this data frame (the bootstrap distribution) is the bootstrap standard error and it can be calculated using the summarize() function.
+
+```{r}
+SE_call <- boot_dist_call |>
+  summarize(se = sd(stat)) |>
+  pull()
+
+SE_call
+```
+
+## We can use this value, along with our point estimate, to roughly calculate a 95% confidence interval:
+
+$\hat{p} \pm z^*se$
+
+```{r}
+c(p_hat_call - 1.96 * SE_call, p_hat_call + 1.96 * SE_call)
+```
+
+*We are 95% confident that the true proportion of applicants receiving callbacks is between 7.28% and 8.81%.*
+
+## The normal distribution for confidence interval
+
+Another option for calculating the CI is by estimating it by using the Normal Distribution (the bell curve)
+
+**If**
+
+1.  observations are independent
+2.  n is large (S-F condition is met)
+
+**Then**
+
+$\hat{p}$ follows a normal distribution
+
+## Steps
+
+### Calculate proportion receiving callback
+
+```{r}
+n <- nrow(resume1)
+p_hat_call <- resume1|>
+  summarize(prop_call = mean(called == "yes")) |>
+  pull()
+p_hat_call
+```
+
+### Check conditions (both should be \>= 10)
+
+```{r}
+n * p_hat_call
+n * (1 - p_hat_call)
+```
+
+### Calculate SE
+
+```{r}
+se_call_approx <- sqrt(p_hat_call * (1 - p_hat_call) / n)
+```
+
+### Calculate
+
+$z^*$
+
+```{r}
+z_star <- qnorm(.975, m=0, sd = 1)
+```
+
+### Form 95% CI
+
+```{r}
+c(p_hat_call - z_star * se_call_approx, p_hat_call + z_star * se_call_approx)
+```
+
+## Hypothesis Test
+
+Use the General Social Survey (gss) data
+
+```{r}
+data("gss")
+head(gss)
+```
+
+### Do 1/3 of Americans have a college degree?
+
+Use a hypothesis test to study a question on the gss. Respondents were asked if have a college degree. You can look at the distribution of answers by forming a bar chart. You see that of the 500 respondents, about 180 have a degree.
+
+```{r}
+ggplot(gss, aes(x=college)) +
+  geom_bar()
+```
+
+## State the null and alternative hypotheses
+
+$H_o: p = 1/3$
+
+$H_a: p \neq 1/3$
+
+## Calculate the proportion
+
+```{r}
+p_hat <- gss |>
+  summarize(mean(college == "degree")) |>
+  pull()
+p_hat
+```
+
+## Now perform the hypothesis test
+
+```{r}
+null <- gss |>
+  specify(response = college, success = "degree") |>
+  hypothesize(null = "point", p = 1/3) |> 
+  generate(reps = 500, type = "draw") |> 
+  calculate(stat = "prop")
+
+null
+```
+
+## Create a density curve of the null distribution
+
+Add a vertical line (geom_vline) to indicate where p-hat lies on the curve.
+
+```{r}
+ggplot(null, aes(x = stat)) +
+  geom_density() +
+  geom_vline(
+    xintercept = p_hat, 
+    color = "red"
+  )
+```
+
+## Calculate a two-tailed p-value (multiply by two)
+
+```{r}
+null |>
+  summarize(mean(stat > p_hat)) |>
+  pull() * 2
+```
+
+*The p-value is very large, at 0.46. We fail to reject the null. There is no evidence that the proportion of US adults with a college degree is different than 1/3 the population.*
