@@ -1,0 +1,85 @@
+---
+title: "Simulating Sampling"
+author: "Rachel Saidi"
+format: html
+editor: visual
+---
+
+## Simulating Sampling
+
+In this activity, we will use simulation on a pre-built dataset to explore **The Central Limit Theorem**
+
+### Load the data, "storms"
+
+```{r warning=FALSE, message=FALSE}
+library(dplyr)
+data("storms")
+?storms  # documentation about variables
+```
+
+### Name the variable for wind
+
+Since we are just exploring this single quantitative varible, we will bypass needing to require **storms$**
+
+```{r}
+wind <- storms$wind
+mean(wind)
+sd(wind)
+```
+
+### View a histogram of the population data
+
+```{r}
+hist(wind, main = "Maximum sustained Wind Speed (in knots)")
+```
+
+```{r}
+# What is the shape of the population distribution of wind?
+```
+
+
+### Create a sample of the data using **sample**
+
+We will sample **with replacement**
+
+```{r}
+sample(wind, size = 100, replace = TRUE)
+mean(sample(wind, size = 100, replace = TRUE))
+sd(sample(wind, size = 100, replace = TRUE))
+```
+
+### View the histogram of the sample distribution of wind
+
+```{r}
+hist(sample(wind, size = 100, replace = TRUE), main = "Sample of Max Wind Speed (in knots)")
+```
+
+```{r}
+# What is the shape of the sample distribution of wind?
+
+# What does this histogram show that is different than the population plot?
+```
+
+
+### From the sample, create a **SAMPLING** distribution
+
+```{r}
+r <- replicate(1000, mean(sample(wind, size=100, replace=TRUE)))
+mean(r)
+sd(r)
+```
+
+### View the histogram of the **sampling distribution**
+
+```{r}
+hist(r, main = "Sampling Distribution of Wind Speed (in knots)")
+```
+
+```{r}
+# What is the shape of the sampling distribution of wind? 
+
+# What does this histogram show that is different than the sample plot?
+```
+
+
+
