@@ -1,0 +1,64 @@
+---
+title: "chapter 1 notes"
+format: html
+editor: visual
+---
+
+## load the libraries
+
+```{r message = FALSE}
+library(tidyverse)
+library(openintro)
+```
+
+## view high school and beyond data class
+
+```{r}
+data("hsb2")
+```
+
+## filter for public school students
+
+```{r}
+hsb2_public <- hsb2 |>  # |> piping operator - "and then"
+  filter(schtyp == "public")
+```
+
+## how many schtyp factors are there?
+
+```{r}
+unique(hsb2$ses)
+```
+
+## view the reading score variable
+
+```{r}
+summary(hsb2$read)
+avg_read <- mean(hsb2$read)
+```
+
+## categorize above average and below average reading score
+
+```{r}
+hsb2_new <- hsb2 |>
+  mutate(read_cat = if_else(read < avg_read, "below average","at or above average"))
+```
+
+```{r}
+hsb2 |> 
+  count(schtyp)
+```
+
+```{r}
+ggplot(data = hsb2, aes(x = science, y = math, color = prog)) +
+  geom_point()
+```
+
+```{r}
+head(email50)
+```
+
+```{r}
+ggplot(email50, aes(x = exclaim_mess, y = num_char, color = spam)) +
+  geom_point()
+```
