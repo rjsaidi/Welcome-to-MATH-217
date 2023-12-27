@@ -1,0 +1,55 @@
+---
+title: "chapter 13-14 statistical inference"
+author: "Rachel Saidi"
+format: html
+editor: visual
+---
+
+## Chapter 13 - Mathematical Modeling with Normal Distribution Calculations
+
+### Example2:
+
+Head lengths of brushtail possums follow a nearly normal distribution with mean 92.6 mm and standard deviation 3.6 mm.
+
+a.  Compute the Z scores for possums with head lengths of 95.4 mm and 85.8 mm.
+b.  A brushtail possum is found to have a head length of 85.8 mm. What percentile of possums have head lengths 85.8 mm or smaller?
+c.  A brushtail possum is found to have a head length of 95.4 mm. What percentile of possums have head lengths 95.4 mm or more?
+
+```{r}
+# Answers 
+#a
+(95.4-92.6)/3.6
+#b
+pnorm(85.8, mean = 92.6, sd = 3.6)
+#c
+1 - pnorm(95.4, mean = 92.6, sd = 3.6)
+#c (alternative code)
+pnorm(95.4, mean = 92.6, sd = 3.6, lower.tail = FALSE)
+```
+
+## To draw the pictures of these areas, use this code:
+
+```{r}
+#b drawing
+openintro::normTail(m = 92.6, s = 3.6, L = 85.8) 
+     # notice L is used to shade the lower tail
+
+#c drawing
+openintro::normTail(m = 92.6, s = 3.6, U = 95.4)
+      # notice U is used to shade the upper tail
+```
+
+### Example3:
+
+Head lengths of brushtail possums follow a nearly normal distribution with mean 92.6 mm and standard deviation 3.6 mm.
+
+a.  What possum head length is in the bottom 20th percentile?
+b.  What head length is in the top 5th percentile?
+
+```{r}
+# Answers: (note p must be a percentile, which means it represents area to the left of the cutoff)
+#a
+qnorm(p=.20, m=92.6, s=3.6) 
+#b
+qnorm(p=.95, m=92.6, s=3.6)
+```
