@@ -35,3 +35,15 @@ In this unit, you will learn about EDA and working with numerical data.
 - Use this quarto document to learn about populations, samples, and sampling distributions.
      - [Chapter 5 Notes](./chapter5notes.qmd)
  
+## Unit 3 - Intro to Probability and Probability Distributions
+This is our introduction to probability and probability distributions for categorical data. Let's get started!
+
+- Use these notes to get started:     [**Chapter 6 Notes - Intro to Data and R Studio**](./Math217_notes_ch6.pdf)
+
+## Unit 4 - 
+This is our introduction to linear and multiple linear regression. Let's get started!
+
+- Use these notes to get started on linear regression:     [**Chapter 7 Notes - Linear Regression**](./Math217_notes_ch7.pdf)
+- Use these notes to get started on multiple linear regression:     [**Chapter 8 Notes - Study Design**](./Math217_notes_ch8.pdf)
+- Use this quarto document to learn about linear and multiple linear regression:
+     - [Chapter 7-8 Quarto Document](./chapter7-8notes.qmd)
