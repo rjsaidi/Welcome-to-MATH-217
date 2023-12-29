@@ -40,7 +40,7 @@ This is our introduction to probability and probability distributions for catego
 
 - Use these notes to get started:     [**Chapter 6 Notes - Intro to Data and R Studio**](./Math217_notes_ch6.pdf)
 
-## Unit 4 - 
+## Unit 4 - Linear and Multiple Linear Regression
 This is our introduction to linear and multiple linear regression. Let's get started!
 
 - Use these notes to get started on linear regression:     [**Chapter 7 Notes - Linear Regression**](./Math217_notes_ch7.pdf)
