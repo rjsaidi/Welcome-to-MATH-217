@@ -5,8 +5,8 @@ Welcome to Statistics for Scientists. This site will include course materials, r
 Resources that may be used throughout the MATH 217 course
 
 1.Free, Open-Source Textbook: 
-  - Cetinkaya-Rundel M, Hardin, Johanna. Introduction to Modern Statistics. OpenIntro Inc., 2021. ISBN 1943450145, 9781943450145. This statistics textbook is free as a pdf file and available under a Creative Commons license.
-  - www.OpenIntro.org
+    - Cetinkaya-Rundel M, Hardin, Johanna. Introduction to Modern Statistics. OpenIntro Inc., 2021. ISBN 1943450145, 9781943450145. This statistics textbook is free as a pdf file and available under a Creative Commons license.
+    - www.OpenIntro.org
 
 2. Course datasets: http://bit.ly/data110datasets
 
