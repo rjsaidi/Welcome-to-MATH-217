@@ -53,4 +53,14 @@ This is our introduction to logistic regression and machine learning. Let's get 
 
 - Use these notes to get started on logistic regression:     [**Chapter 9 Notes - Linear Regression**](./Math217_notes_ch9.pdf)
 - Use this quarto document to learn about logistic regression:
-     - [Chapter 9 Quarto Document](./chapter9notes.qmd)
+     - [Chapter 9 Quarto Document](./chapter9logisticregression.qmd)
+
+## Unit 6 - Exam 1
+
+## Unit 7 - Foundations for Inference
+This is our introduction to foundations for inference. Let's get started!
+
+- Use these notes to get started on hypothesis testing with randomization:     [**Chapter 11 Notes - Linear Regression**](./Math217_notes_ch11.pdf)
+- Use these notes to get started on confidence intervals with bootstrapping:     [**Chapter 12 Notes - Study Design**](./Math217_notes_ch12.pdf)
+- Use this quarto document to learn about linear and multiple linear regression:
+     - [Chapter 11-12 Quarto Document](./chapter11-12statisticalinference.qmd)
