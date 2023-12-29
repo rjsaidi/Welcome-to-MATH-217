@@ -52,5 +52,5 @@ This is our introduction to linear and multiple linear regression. Let's get sta
 This is our introduction to logistic regression and machine learning. Let's get started!
 
 - Use these notes to get started on logistic regression:     [**Chapter 9 Notes - Linear Regression**](./Math217_notes_ch9.pdf)
-- Use this quarto document to learn about linear and multiple linear regression:
+- Use this quarto document to learn about logistic regression:
      - [Chapter 9 Quarto Document](./chapter9notes.qmd)
