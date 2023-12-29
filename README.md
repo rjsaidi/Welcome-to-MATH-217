@@ -47,3 +47,10 @@ This is our introduction to linear and multiple linear regression. Let's get sta
 - Use these notes to get started on multiple linear regression:     [**Chapter 8 Notes - Study Design**](./Math217_notes_ch8.pdf)
 - Use this quarto document to learn about linear and multiple linear regression:
      - [Chapter 7-8 Quarto Document](./chapter7-8notes.qmd)
+
+## Unit 5 - Logistic Regression and ML
+This is our introduction to logistic regression and machine learning. Let's get started!
+
+- Use these notes to get started on logistic regression:     [**Chapter 9 Notes - Linear Regression**](./Math217_notes_ch9.pdf)
+- Use this quarto document to learn about linear and multiple linear regression:
+     - [Chapter 9 Quarto Document](./chapter9notes.qmd)
