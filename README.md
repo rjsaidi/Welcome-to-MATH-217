@@ -69,6 +69,5 @@ This is our introduction to foundations for inference. Let's get started!
 We continue to explore foundations for inference, modeling, and decision errors. Let's get started!
 
 - Use these notes to get started on inference with mathematical models:     [**Chapter 13 Notes - Inference Using Mathematical Models**](./Math217_notes_ch13.pdf)
-- Use these notes to get started on decision errors:     [**Chapter 14 Notes - Decision Errors**](./Math217_notes_ch14.pdf)
-- Use this quarto document to learn about linear and multiple linear regression:
+- Use this quarto document to learn about inference using mathematical models and understanding decision errors:
      - [Chapter 13-14 Quarto Document](./chapter13-14statisticalinference.qmd)
