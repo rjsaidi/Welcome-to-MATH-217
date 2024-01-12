@@ -44,14 +44,14 @@ This is our introduction to probability and probability distributions for catego
 This is our introduction to linear and multiple linear regression. Let's get started!
 
 - Use these notes to get started on linear regression:     [**Chapter 7 Notes - Linear Regression**](./Math217_notes_ch7.pdf)
-- Use these notes to get started on multiple linear regression:     [**Chapter 8 Notes - Study Design**](./Math217_notes_ch8.pdf)
+- Use these notes to get started on multiple linear regression:     [**Chapter 8 Notes - Mutliple Linear Regression**](./Math217_notes_ch8.pdf)
 - Use this quarto document to learn about linear and multiple linear regression:
      - [Chapter 7-8 Quarto Document](./chapter7-8notes.qmd)
 
 ## Unit 5 - Logistic Regression and ML
 This is our introduction to logistic regression and machine learning. Let's get started!
 
-- Use these notes to get started on logistic regression:     [**Chapter 9 Notes - Linear Regression**](./Math217_notes_ch9.pdf)
+- Use these notes to get started on logistic regression:     [**Chapter 9 Notes - Logistic Regression**](./Math217_notes_ch9.pdf)
 - Use this quarto document to learn about logistic regression:
      - [Chapter 9 Quarto Document](./chapter9logisticregression.qmd)
 
@@ -60,15 +60,15 @@ This is our introduction to logistic regression and machine learning. Let's get 
 ## Unit 7 - Foundations for Inference
 This is our introduction to foundations for inference. Let's get started!
 
-- Use these notes to get started on hypothesis testing with randomization:     [**Chapter 11 Notes - Linear Regression**](./Math217_notes_ch11.pdf)
-- Use these notes to get started on confidence intervals with bootstrapping:     [**Chapter 12 Notes - Study Design**](./Math217_notes_ch12.pdf)
+- Use these notes to get started on hypothesis testing with randomization:     [**Chapter 11 Notes - Intro to Statistical Inference with Hypothesis Testing**](./Math217_notes_ch11.pdf)
+- Use these notes to get started on confidence intervals with bootstrapping:     [**Chapter 12 Notes - Statistical Inference with Confidence Intervals**](./Math217_notes_ch12.pdf)
 - Use this quarto document to learn about linear and multiple linear regression:
      - [Chapter 11-12 Quarto Document](./chapter11-12statisticalinference.qmd)
 
 ## Unit 8 - Foundations for Inference Continued
 We continue to explore foundations for inference, modeling, and decision errors. Let's get started!
 
-- Use these notes to get started on inference with mathematical models:     [**Chapter 13 Notes - Linear Regression**](./Math217_notes_ch13.pdf)
-- Use these notes to get started on decision errors:     [**Chapter 14 Notes - Study Design**](./Math217_notes_ch14.pdf)
+- Use these notes to get started on inference with mathematical models:     [**Chapter 13 Notes - Inference Using Mathematical Models**](./Math217_notes_ch13.pdf)
+- Use these notes to get started on decision errors:     [**Chapter 14 Notes - Decision Errors**](./Math217_notes_ch14.pdf)
 - Use this quarto document to learn about linear and multiple linear regression:
      - [Chapter 13-14 Quarto Document](./chapter13-14statisticalinference.qmd)
