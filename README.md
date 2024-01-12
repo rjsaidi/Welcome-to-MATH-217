@@ -71,3 +71,11 @@ We continue to explore foundations for inference, modeling, and decision errors.
 - Use these notes to get started on inference with mathematical models:     [**Chapter 13 Notes - Inference Using Mathematical Models**](./Math217_notes_ch13.pdf)
 - Use this quarto document to learn about inference using mathematical models and understanding decision errors:
      - [Chapter 13-14 Quarto Document](./chapter13-14statisticalinference.qmd)
+ 
+## Unit 9 - Inference for Categorical Variables
+We will specifically explore statistical inference for categorical variables. Let's get started!
+
+- Use these notes to explore inference for single proportions:     [**Chapter 16 Notes - Inference for Single Proportions**](./Math217_notes_ch16.pdf)
+- Course project requirements: 
+- Use this quarto document to learn about inference for single proportions:
+     - [Chapter 16 Quarto Document](./chapter16single_prop.qmd)
