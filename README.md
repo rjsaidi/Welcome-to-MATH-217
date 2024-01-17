@@ -79,3 +79,12 @@ We will specifically explore statistical inference for categorical variables. Le
 - Course project requirements: 
 - Use this quarto document to learn about inference for single proportions:
      - [Chapter 16 Quarto Document](./chapter16single_prop.qmd)
+ 
+## Unit 10 - Inference for Categorical Variables
+We will specifically explore statistical inference for two categorical variables. Let's get started!
+
+- Use these notes to explore inference for two proportions:     [**Chapter 17 Notes - Inference for Two Proportions**](./Math217_notes_ch17.pdf)
+      - [Chapter 17 Quarto Document](./chapter17diffofproportions.qmd)
+- Use these notes to explore inference for two-way tables:      [**Chapter 18 Notes - Inference for Two-Way Tables**](./Math217_notes_ch18.pdf)
+      - [Chapter 18 Quarto Document](./chapter18chisquare.qmd)
+
