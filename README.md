@@ -91,6 +91,13 @@ We will specifically explore statistical inference for two categorical variables
      - [Chapter 18 Quarto Document](./chapter18chisquare.qmd)
 
 
+## Unit 11 - Inference for Numerical Variables
+We will specifically explore statistical inference for single quantitative variables. Let's get started!
+
+- Use these notes to explore inference for single numerical values:     [**Chapter 19 Notes - Inference for Single Numerical Values**](./Math217_notes_ch19.pdf)
+- Use this quarto document to learn about inference for two proportions.
+     - [Chapter 19 Quarto Document](./chapter19singlemean.qmd)
+
 
 
 
