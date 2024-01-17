@@ -1,0 +1,118 @@
+---
+title: "Chapter 22 interactive notes"
+author: "R Saidi"
+format: docx
+editor: visual
+---
+
+## Load the libraries and data
+
+Load this data from the class
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+library(openintro)
+data("nycflights")
+head(nycflights)
+```
+
+The nycflights dataset has 32735 observations with 16 variables, including flight origin (origin) and arrival delay (arr_delay)
+
+## What are the origin airports?
+
+```{r}
+unique(nycflights$origin)
+```
+
+"JFK" (Kennedy Airport) "LGA" (Laguardia Airport) "EWR" (Newark Airport)
+
+## Before performing ANOVA, check conditions
+
+### Constant variance?
+
+```{r}
+nycflights |>
+  # Group by origin
+  group_by(origin) |>
+  # Calculate the std dev of arrival delay as std_delay
+  summarize(sd_delay = sd(arr_delay))
+```
+
+*The standard deviations do not appear too different.*
+
+## Create density ridges plot to compare the 3 group distributions
+
+```{r}
+# install the package ggridges
+library(ggridges)
+nycflights |>
+  # Map wordsum to the x-axis and class to the y-axis
+  ggplot(aes(x = arr_delay, y = origin)) +
+  # Add density ridges to the plot! 
+  geom_density_ridges(aes(fill = origin), alpha = 0.5) +
+  scale_fill_brewer(palette = "Dark2")
+```
+
+*Again, the distributions appear very similar.*
+
+```{r}
+# Run an analysis of variance on score vs. rank
+aov_delay_origin <- aov(arr_delay ~ origin, data = nycflights)
+#summary(aov_delay_origin)
+# Tidy the model
+tidy(aov_delay_origin)
+```
+
+## Interpret the results
+
+The p-value of the ANOVA test is very small. Therefore we reject the null. There is very strong evidence that at least one mean arrival delay from one of the 3 airport origins is different.
+
+## Simulating samples under the null hypothesis
+
+### First calculate the observed statistic
+
+In the case of an ANOVA, the statistic we are interested in is the F-statistic. While we can plot this statistic on an F-distribution, it really is just another statistic that we can calculate (like the mean or median). We like this statistic because it allows for us to summarize how different multiple means are from each other, relative to how variable the observations are within each group.
+
+We can calculate the F-statistic using the tools from the infer package we are familiar with. The only part that is new is the stat that we calculate. Here, we use the "F" statistic.
+
+```{r}
+obs_stat <- nycflights |> 
+  specify(arr_delay ~ origin) |> 
+  calculate(stat = "F")
+obs_stat
+```
+
+The next step is to simulate what we would expect for arrival delays to look like, if the null hypothesis was true. This is similar to the method for a difference in means, except now we have three groups: jfk, lga, and ewr. The underlying process, however, looks the same:
+
+Step 1: Write the values of arr_delay on 32735 index cards (one card per person). Step 2: Shuffle the cards and randomly split them into three new piles, of the same size as the original groups. Step 3: Calculate and record the test statistic: F-statistic Step 4: Repeat steps (1) and (2) 1000 to generate the sampling distribution of the difference in means under the null hypothesis. Step 5: Calculate p-value as the percentage of simulations where the test statistic is at least as extreme as the observed F-statistic
+
+```{r}
+null_distr <- nycflights |>
+ specify(arr_delay ~ origin) |> 
+  hypothesize(null = "independence") |> 
+  generate(reps = 1000, type = "permute") |> 
+  calculate(stat = "F")
+```
+
+```{r}
+null_distr |> 
+  visualise() +
+  shade_p_value(obs_stat = obs_stat, direction = "greater")
+```
+
+*We can see that the observed F-statistic is very far above the F distribution. therefore we reject the null. There is very strong evidence that the mean arrival delay is different at at least one airport.*
+
+## Post hoc testing
+
+Once you reject the null, now you can determine by pair-wise testing which group's mean is different using a "family" error rate, and then distribute that level to each of the tests we are performing. The "family" error rate specifies an overall Type I error rate we are willing to have for all of tests you wish to perform. We will use alpha = 0.05
+
+There are many pairwise tests. We will use the TukeyHSD test on our original model, aov_delay_origin.
+
+```{r}
+TukeyHSD(aov_delay_origin)
+```
+
+## How to read this output
+
+The p-adjusted values for comparing mean delays for JFK and EWR are significant The p-adjusted values for comparing mean delays for LGA and EWR are significant The p-adjusted values for comparing mean delays for LGA and JFK are not significant.
