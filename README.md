@@ -99,5 +99,16 @@ We will specifically explore statistical inference for single quantitative varia
      - [Chapter 19 Quarto Document](./chapter19singlemean.qmd)
 
 
+## Unit 12 - Inference for Two or More Means
+We will specifically explore statistical inference for two or more quantitative variables. Let's get started!
+
+- Use these notes to explore inference for two quantitative variables:     [**Chapter 20 Notes - Inference for Two Numerical Values**](./Math217_notes_ch20.pdf)
+- Use this quarto document to learn about inference for two proportions.
+     - [Chapter 20 Quarto Document](./chapter20diffofmeans.qmd)
+- Use these notes to explore inference for multiple group means and ANOVA:      [**Chapter 22 Notes - Inference for Multiple Group Means**](./Math217_notes_ch22.pdf)
+- Use this quarto document to learn about Chi Square Testing:
+     - [Chapter 22 Quarto Document](./chapter22anova.qmd)
+ 
+
 
 
