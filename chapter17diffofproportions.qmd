@@ -1,0 +1,160 @@
+---
+title: "Chapter 17 interactive notes"
+author: "R Saidi"
+format: docx
+editor: visual
+---
+
+## Load the libraries and data
+
+```{r}
+#| message: false
+library(tidyverse)
+library(openintro)
+library(tidymodels)
+data("gss")
+```
+
+## A question in two variables
+
+Do women and men join democratic party at different rates?
+
+Let p be the proportion that are democrats.
+
+$H_o: p_f = p_m$ $H_a: p_f \neq p_m$
+
+We're curious to know: do men and women join the democratic party at different rates?
+
+Let's let p be the true proportion that join democrats.
+
+We can then phrase this question as the null hypothesis that the difference in the proportion of men and the proportion of women that join democrats is zero.
+
+The alternative hypothesis would then be that that difference is non-zero.
+
+Do women and men have different proportions of affiliation to the democratic party?
+
+```{r}
+ggplot(gss, aes(x = sex, fill = partyid)) +
+  geom_bar()
+```
+
+Let's take a look at how these proportions compare in the gss data set. The data live in two columns, partyid and sex, so we can map sex to the x-axis and their political party to the color fill of the bars. If we add a geom_bar layer, we get a stacked bar chart that shows us that we have more females in our data set than males and that opinions are split.
+
+```{r}
+ggplot(gss, aes(x = sex, fill = partyid)) +
+  geom_bar(position = "fill")
+```
+
+We can convert these to proportions by adding the position equals "fill" argument. It looks like the proportion for men is a bit lower than the proportion for women.
+
+## Create p-hat values
+
+Sample proportions for males and females to identify with democrats - then calculate the difference of the proportions using d_hat
+
+```{r}
+p_hats <- gss |>
+  group_by(sex) |>
+  summarize(mean(partyid == "dem", na.rm = TRUE)) |>
+  pull()
+d_hat <- diff(p_hats)
+d_hat
+```
+
+```{r}
+?diff
+```
+
+
+We can calculate the difference in these proportions by using our normal summarize method of calculating a proportion, but add in a group_by line to indicate we want to calculate that proportion for men and women separately. The result is a vector of two proportions. We take their difference with the diff function and save it as d-hats, which we learn is 0.064.
+
+## Generating data from Ho
+
+$H_o: p_f = p_m$
+
+There is no association between political party affiliation as democrats for sex of a subject.
+
+The variable partyid = democratic is independent from the variable sex.
+
+⇒ Generate data by permutation
+
+## Mutate partyid to be a binary variable
+
+```{r}
+gss1 <- gss |>
+  mutate(two_party = ifelse(partyid == "dem", "democrat", "not-democrat"))
+```
+
+## Do women and men have different political party affiliations?
+
+## Build up a full null distribution
+
+```{r}
+null <- gss1 |>
+  specify(two_party ~ sex, success = "democrat") |>
+  hypothesize(null = "independence") |>
+  generate(reps = 500, type = "permute") |>
+  calculate(stat = "diff in props", order = c("female", "male"))
+null
+```
+
+## Plot a density curve
+
+```{r}
+ggplot(null, aes(x = stat)) +
+  geom_histogram() +
+  geom_vline(xintercept = 0.06499, color = "red")
+```
+
+*This distribution of data suggests that there may be a difference between sexes in proportion of affiliation to democrats with females at higher proportions than males..*
+
+## We need a p-value to determine the true effect.
+
+```{r}
+# Compute two-tailed p-value
+pvalue <- null |>
+  summarize(
+    one_tailed_pval = mean(stat >= d_hat),
+    two_tailed_pval = 2 * one_tailed_pval) |>
+  pull(two_tailed_pval)
+pvalue
+```
+
+*The two-tailed p-value is 0.14. We fail to reject the null. There is no compelling evidence that there is a difference in proportions of females and males affiliated to the democratic party.*
+
+## Create a 95% Bootstrap CI
+
+```{r}
+# Create the bootstrap distribution
+boot <- gss1 |>
+  # Specify the variables and success
+  specify(two_party ~ sex, success = "democrat") |>
+  # Generate 500 bootstrap reps
+  generate(reps = 500, type = "bootstrap") |>
+  # Calculate the statistics
+  calculate(stat = "diff in props", order = c("female", "male"))
+```
+
+```{r}
+# Compute the standard error
+SE <- boot |>
+  summarize(se = sd(stat)) |>
+  pull()
+  
+# Form the CI (lower, upper)
+c(d_hat - 1.960 * SE, d_hat + 1.960 * SE)
+```
+
+*We are 95% confident that the true difference in proportions of male and female affiliation to the democratic party is between -1.19% and 14.79%. Because zero is included there is no compelling evidence that there is a difference in sex with respect to affiliation to the democratic party.*
+
+## For your textbook homework prop.test()
+
+```{r}
+#  prop.test(x = c(x1, x2), n = c(n1, n2)) # this defaults to 2-tailed test
+# this uses the Yates Continuity Correction
+prop.test(x = c(26, 10), n = c(120, 120))
+```
+
+```{r}
+?prop.test()
+```
+
