@@ -1,9 +1,7 @@
 ---
 title: "Chapter 11-12 - Statistical Inference"
 author: "Rachel Saidi"
-format: docx
-editor: visual
-prefer-html: true
+format: html
 ---
 
 ## Load library, set the working directory, and dataset
@@ -13,19 +11,20 @@ library(tidyverse)
 library(knitr)
 library(kableExtra)
 library(tidymodels)
-setwd("C:/Users/rsaidi/Dropbox/Rachel/MontColl/Datasets/Datasets")
+setwd("C:/Users/rsaidi/Dropbox/Rachel/MontColl/Math217/Notes")
 sex_disc <- read_csv("sex_discrimination.csv")
 set.seed(9753)  # allows to replicate results each time document is rendered
 ```
 
 ## This vignette will help you understand HT using tidymodels
 
-https://www.tidymodels.org/learn/statistics/infer/#:~:text=hypothesize()%20allows%20you%20to,to%20form%20the%20null%20distribution. 
+https://www.tidymodels.org/learn/statistics/infer/#:\~:text=hypothesize()%20allows%20you%20to,to%20form%20the%20null%20distribution.
 
 ## Two-Way table
 
 ```{r}
 decision_table  <- table(sex_disc)
+decision_table
 
 kbl(decision_table, caption = "Two-Way Table") |> 
   kable_styling() |> 
@@ -48,10 +47,10 @@ Using the mutate() and sample() functions, the vector of promotion decision is m
 perm1 <- sex_disc |>
   mutate(decision_perm = sample(decision)) |>
   group_by(sex) |>
-  summarize(prop_promoted_perm = mean(decision_perm == "promoted"),
-            prop_promoted = mean(decision == "promoted")) |>
+  summarize(prop_promoted_perm = mean(decision_perm == "not promoted"),
+            prop_promoted = mean(decision == "not promoted")) |>
   summarize(diff_perm = diff(prop_promoted_perm), 
-            diff_orig = diff(prop_promoted))  # promoted - not promoted
+            diff_orig = diff(prop_promoted))  # not promoted - promoted
 kbl(perm1)|>
   kable_styling() |>
   row_spec(row = 0, color = "dodgerblue")
@@ -72,17 +71,16 @@ perm_reps <- sex_disc |>
   rep_sample_n(size = nrow(sex_disc), reps = 10, replace = FALSE) |>
   mutate(decision_perm = sample(decision)) |>
   group_by(replicate, sex) |>
-  summarize(prop_promoted_perm = mean(decision_perm == "promoted"),
-            prop_promoted = mean(decision == "promoted")) |>
+  summarize(prop_promoted_perm = mean(decision_perm == "not promoted"),
+            prop_promoted = mean(decision == "not promoted")) |>
   summarize(diff_perm = diff(prop_promoted_perm), 
-            diff_orig = diff(prop_promoted))  # promoted - not promoted
+            diff_orig = diff(prop_promoted))  # not promoted - promoted
 kbl(perm_reps) |>
   kable_styling() |>
     row_spec(row = 0, color = "dodgerblue")
 ```
 
 *Notice the variation in the permutation differences.*
-
 
 ```{r}
 ggplot(perm_reps, aes(diff_perm))+
@@ -96,10 +94,10 @@ perm_1000_reps <- sex_disc |>
   rep_sample_n(size = nrow(sex_disc), reps = 1000, replace = FALSE) |>
   mutate(decision_perm = sample(decision)) |>
   group_by(replicate, sex) |>
-  summarize(prop_promoted_perm = mean(decision_perm == "promoted"),
-            prop_promoted = mean(decision == "promoted")) |>
+  summarize(prop_promoted_perm = mean(decision_perm == "not promoted"),
+            prop_promoted = mean(decision == "not promoted")) |>
   summarize(diff_perm = diff(prop_promoted_perm), 
-            diff_orig = diff(prop_promoted))  # promoted - not promoted
+            diff_orig = diff(prop_promoted))  # not promoted - promoted
 ```
 
 ## Create a dotplot of the replications of permutated differences
@@ -110,7 +108,7 @@ Show the cut-off for +/- the original difference in proportions of "promoted"
 plot_perm <- ggplot(perm_1000_reps, aes(diff_perm)) +
   geom_dotplot(binwidth = 0.01) +
   geom_vline(xintercept = c(-0.292, 0.292), color = "blue", linetype = "dotted", linewidth=1) +
-  labs(title = "Dotplot of 100 Replications of Permutations\n of Differences of Proportions")
+  labs(title = "Dotplot of 1000 Replications of Permutations\n of Differences of Proportions")
 plot_perm
 ```
 
@@ -126,40 +124,51 @@ Although the plot will appear differently each time due to randomization, notice
 
 -   specify() that the relationship of interest is decision vs. sex and a success in this context is promotion, set success to "promoted.
 
--   hypothesize() is used with null = "independence" for comparing difference of proportions, null  = "point", mu = VALUE for comparing difference of means.
+-   hypothesize() is used with null = "independence" for comparing difference of proportions, null = "point", mu = VALUE for comparing difference of means.
 
 ```{r}
 # Hypothesize independence (this test is used to compare difference of proportions)
 decide_perm <- sex_disc |>
-  specify(decision ~ sex, success = "promoted") |>  # syntax is y ~ x
+  specify(decision ~ sex, success = "not promoted") |>  # syntax is y ~ x
   hypothesize(null = "independence") |>
   generate(reps = 1000, type = "permute") |> 
-  calculate(stat = "diff in props", order = c("male", "female"))
+  calculate(stat = "diff in props", order = c("female", "male"))
 decide_perm
 ```
 
 ## Calculate a p-value for the above hypothesis test for two-tail test
 
+I used the following to get more information about all of this code:
+
+vignette("infer")
+
+First set the observed difference in proportions value from the original data
+
 ```{r}
-p_value <- perm_1000_reps |>
-  summarize(count = sum(abs(diff_orig) <= abs(diff_perm)), 
-            proportion = mean(abs(diff_orig) <= abs(diff_perm)))
-p_value
+decide_obs <- sex_disc |>
+  specify(decision ~ sex, success = "not promoted") |>  
+  hypothesize(null = "independence") |>
+  calculate(stat = "diff in props", order = c("female", "male"))
+decide_obs
+```
+
+## Now compute the p value using the function get_p_value
+
+
+```{r}
+pvalue <- get_p_value(decide_perm, decide_obs,  direction = "two-sided")
+pvalue
 ```
 
 ## If we wanted only a one-tail test, the resulting p-value is 1/2 the result above
 
 ```{r}
-p_value <- perm_1000_reps |>
-  summarize(count = sum(diff_orig <= diff_perm), 
-            proportion = mean(diff_orig <= diff_perm))
-p_value
+.5*pvalue
 ```
-
 
 ## Conclusion based on p-value
 
-This p-value suggests that such a difference from chance alone, assuming the null hypothesis was true, would be moderately rare: it would only happen about  44 in 1000 times. When results like these are inconsistent with Ho, we reject Ho in favor of Ha. Here, we concluded there was discrimination against female candidates. The 44-in-1000 chance is what we call a p-value, which is a probability quantifying the strength of the evidence against the null hypothesis, given the observed data.
+This p-value suggests that such a difference from chance alone, assuming the null hypothesis was true, would be moderately rare: it would only happen about 68 in 1000 times. When results like these are inconsistent with Ho, we reject Ho in favor of Ha. Here, we concluded there was discrimination against female candidates. The 68-in-1000 chance is what we call a p-value, which is a probability quantifying the strength of the evidence against the null hypothesis, given the observed data.
 
 ## For future work
 
@@ -167,11 +176,9 @@ This p-value suggests that such a difference from chance alone, assuming the nul
 
 In the future, we will look at a different test, call the Chi Square Test, which also compares two groups proportions. If we look at the results of decision of promotions based on sex, the p-value is similar to our two-tailed simulation, at 0.05.
 
-
 ```{r}
 chisq.test(sex_disc$decision, sex_disc$sex)
 ```
-
 
 # Chapter 12 Confidence Intervals
 
@@ -186,11 +193,11 @@ The same variability can be measured through a different mechanism. As before, i
 ### Create bootstrap distribution of proportion of females promoted
 
 ```{r}
-# Compute p-hat* for each resampled proportion of females who were promoted
+# Compute p-hat* for each resampled proportion of females who were not promoted
 fprops <- sex_disc |>
   filter(sex == "female") |>
-  # Specify vote as the response, where yes means success
-  specify(response = decision, success = "promoted") |>
+  # Specify vote as the response, where not promoted means success
+  specify(response = decision, success = "not promoted") |>
   # Generate 1000 reps of type bootstrap
   generate(reps = 1000, type = "bootstrap") |> 
   # Calculate the summary stat "prop"
@@ -220,6 +227,6 @@ percentile_ci
 
 ## Conclusion
 
-We are 95% confident that the true proportion of women who are promoted is between 37.5% and 75.1%.
+We are 95% confident that the true proportion of women who are promoted is between 20.8% and 62.5%.
 
 *Note - this is a wide range of values, so not very precise*
