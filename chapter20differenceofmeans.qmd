@@ -24,8 +24,9 @@ This dataset is a sample of 1000 observations.
 Use a side-by-side boxplot to compare the two groups' distributions
 
 ```{r}
-ggplot(births14, aes(x=habit, y=weight))+
-  geom_boxplot()
+ggplot(births14, aes(x=habit, y=weight, fill = habit))+
+  geom_boxplot()+
+  geom_jitter(alpha = .2)
 ```
 
 Notice there are some na values. Let's remove those.
@@ -34,6 +35,13 @@ Notice there are some na values. Let's remove those.
 births14_a <- births14 |>
   filter(!is.na(habit))
 unique(births14_a$habit)
+```
+
+```{r}
+births_table <- births14_a |>
+  group_by(habit) |>
+  count()
+births_table
 ```
 
 ## Now replot, but use density plots
@@ -86,9 +94,7 @@ Use specify and calculate
 diff_mean_obs <- births14_a |>
   # Specify the response and explanatory variables
   specify(weight ~ habit) |>           # syntax is y ~ x
-  calculate(stat = "diff in means", order = c("nonsmoker", "smoker")) |>
-  # Calculate the observed difference in means
-  pull()  # convert from data frame to single value
+  calculate(stat = "diff in means", order = c("nonsmoker", "smoker")) 
 diff_mean_obs
 ```
 
@@ -106,7 +112,7 @@ diff_ht_mean <- births14_a |>
 ```{r}
 ggplot(diff_ht_mean, aes(stat)) +
   geom_histogram() +
-  geom_vline(xintercept = diff_mean_obs, color = "red")
+  geom_vline(xintercept = pull(diff_mean_obs), color = "red")
 ```
 
 ## Calculate the p-value
@@ -119,6 +125,12 @@ diff_ht_mean |>
 ## Conclusion
 
 Reject the null. There is very strong evidence that there is a difference in mean birth weights for babies born to smoking and non-smoking mothers.
+
+```{r}
+diff_ht_mean |>
+  visualize() +
+  shade_p_value(diff_mean_obs, direction = "two-sided")
+```
 
 ## Example using stem_cell data
 
@@ -164,12 +176,11 @@ diff_mean_ci |>
 
 Zero is not included. We are 95% confident that the true difference in mean weight for babies is between 0.31 and 0.90 lbs higher for nonsmoking mothers versus smoking mothers.
 
-
 ```{r}
 stem <- stem_cell |>
   mutate(diff = after - before)
+head(stem)
 ```
-
 
 Side-by-side boxplots
 
@@ -178,18 +189,25 @@ ggplot(stem, aes(trmt, diff))+
   geom_boxplot()
 ```
 
-histograms
+histograms/density plots
 
 ```{r}
 ggplot(stem, aes(diff, color = trmt))+
   geom_density()
 ```
 
-# when the basic assumptions fail for a t.test
+# When the basic assumptions fail for a t.test
+
+When the sample sizes for each group are small AND the distributions are not bell-shaped.
 
 ## Non-parametric approach
 
 Wilcox Mann Whitney Test
+
+Null:  There is no difference in heart pumping capacity between control and treatment groups.
+
+Alternative: There is a shift in distributions between the control and treatment groups for heart pumping capacity.
+
 
 ```{r}
 wilcox.test(stem$diff ~ stem$trmt)
@@ -197,7 +215,7 @@ wilcox.test(stem$diff ~ stem$trmt)
 
 
 
-
+*Conclusion: Because the p-value is very small, there is a right shift in the difference in heat pumping capcity after treatment for the ESC group over the control group.*
 
 
 
