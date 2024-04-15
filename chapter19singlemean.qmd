@@ -14,18 +14,19 @@ library(tidyverse)
 library(openintro)
 library(tidymodels)
 data("ames")
+head(ames)
+#samp <- sample(ames$price, size = 200)
 ```
 
 ## There are 74 variables about house sale characteristics
 
-
 ## Summarize sale price variable
 
 ```{r}
+options(scipen=999)  # converts from scientific to standard
 summary(ames$Sale_Price)
 hist(ames$Sale_Price)
 ```
-
 
 ## The simple code to create a 95% CI for single mean
 
@@ -35,11 +36,19 @@ Use t.test(). You must indicate the variable of interest
 t.test(ames$Sale_Price, conf.level = .95)
 ```
 
-*We are 95% confident that the mean sale price for homes in Ames is between $177,902.30 and $183,689.90.*
+*We are 95% confident that the mean sale price for homes in Ames is between \$177,902.30 and \$183,689.90.*
 
+##Answer the question:
 
+Test to determine if the mean home sale price in Ames was different from the national average at that time from 2006-2010.
 
-## T test 
+The average home price in the US in 2010 was \$222,900.
+
+```{r}
+t.test(ames$Sale_Price, mu=222900)
+```
+
+## T test
 
 Use the Cherry Blossom dataset from 2017
 
@@ -52,6 +61,7 @@ data("run17")
 ```{r}
 run17_1 <- run17 |>
   mutate(minutes = net_sec/60) 
+head(run17_1)
 ```
 
 ## Generate a sample of size 100 from the population
@@ -62,16 +72,13 @@ run17_samp <- sample(run17_1$minutes, size = 100, replace = FALSE)
 summary(run17_samp)
 ```
 
-
 ## Perform the t test comparing the mean for 2017 to the mean from 2006
 
 The mean from 2006 was 93.29 minutes
 
 Here is the format for the single mean t test
 
-t.test(x, mu = 0, alternative = "two.sided") 
-t.test(x, mu = 0, alternative = "less") 
-t.test(x, mu = 0, alternative = "greater") 
+t.test(x, mu = 0, alternative = "two.sided") t.test(x, mu = 0, alternative = "less") t.test(x, mu = 0, alternative = "greater")
 
 ```{r}
 # compare the mean from the samples from 2017 to the mean in 2006
@@ -82,19 +89,11 @@ t.test(run17_samp, mu = 93.29, alternative = "two.sided")
 
 *Fail to reject the null. There is no compelling evidence that the mean in 2017 is different from the mean in 2006.*
 
-
-
-
 ## Now using tidymodels code for a 95% CI for the ames house prices.
-
 
 This is a two-part exercise: First, generate 15000 bootstrap distributions of sale_price in the ames data frame and record the median of each bootstrap distribution.
 
-
-•	Specify that sale_price is the response variable.
-•	Generate 15000 bootstrap replicates.
-•	Calculate the median of each distribution.
-
+• Specify that sale_price is the response variable. • Generate 15000 bootstrap replicates. • Calculate the median of each distribution.
 
 ```{r}
 # Generate bootstrap distribution of means
@@ -102,7 +101,7 @@ sale_mean_ci <- ames |>
   # Specify the variable of interest
   specify(response = Sale_Price) |>  
   # Generate 10000 bootstrap samples
-  generate(reps = 10000, type = "bootstrap") |>
+  generate(reps = 1000, type = "bootstrap") |>
   # Calculate the mean of each bootstrap sample
   calculate(stat = "mean")   # change this to "median" to see how this changes
   
@@ -110,11 +109,9 @@ sale_mean_ci <- ames |>
 head(sale_mean_ci)
 ```
 
-
 ## Plot a histogram of the boostrap replications
 
 Look at the shape of the distribution
-
 
 ```{r}
 # Plot the sale_mean_ci statistic
@@ -125,7 +122,6 @@ ggplot(sale_mean_ci, aes(x = stat)) +
 
 ## Calculate the 95% CI using the percentile method
 
-
 ```{r}
 # Calculate the 95% CI via percentile method
 sale_mean_ci |>
@@ -135,14 +131,25 @@ sale_mean_ci |>
   )
 ```
 
-*We are 95% confident that the true median home sale price in Ames is between $177,925.10 and $183,698.20.*
+```{r}
+sale_ci <- sale_mean_ci |>
+  get_confidence_interval(level =.95)
+sale_ci
+```
 
+```{r}
+sale_mean_ci %>%
+  visualize() +
+  shade_confidence_interval(endpoints = sale_ci, level=.95)
+```
+
+*We are 95% confident that the true median home sale price in Ames is between \$177,925.10 and \$183,698.20.*
 
 ## Perform the hypothesis test using tidymodels
 
 Answer the question: Test to determine if the mean home sale price in Ames was different from the national average at that time from 2006-2010.
 
-The average home price in the US in 2010 was $222,900.
+The average home price in the US in 2010 was \$222,900.
 
 ## Calculate the observed mean
 
@@ -150,12 +157,9 @@ The average home price in the US in 2010 was $222,900.
 # Calculate observed mean
 price_mean_obs <- ames |>
   # Summarize to calculate the mean observed sale price
-  summarize(mean_price = mean(Sale_Price)) |>
-  # Pull out the value
-  pull()
+  summarize(mean_price = mean(Sale_Price)) 
 price_mean_obs
 ```
-
 
 ## Use "specify", "hypothesize", "generate" and "calculate"
 
@@ -166,27 +170,28 @@ sale_mean_ht <- ames |>
   # Set the hypothesis that national home price is 222900
   hypothesize(null = "point", mu = 222900) |> 
   # Generate 10000 bootstrap replicates
-  generate(reps = 10000, type = "bootstrap") |> 
+  generate(reps = 1000, type = "bootstrap") |> 
   # Calculate the mean
   calculate(stat = "mean")
+head(sale_mean_ht)
 ```
 
 ## Calculate the p-value
 
+*The p-value is 0. Reject the null. The mean sale price of homes in Ames is different (and much less than) the national home price in 2010.*
+
 ```{r}
-# Calculate p-value
-sale_mean_ht |>
-  # Filter on stat less than or equal to price_mean_obs
-  filter(stat <= price_mean_obs) |>
-  # p_val is twice the number of filtered rows divided by the total number of rows
-  summarize(
-    one_sided_p_val = n() / 10000,
-    two_sided_p_val = 2 * one_sided_p_val
-  )
+pvalue <- get_p_value(sale_mean_ht, price_mean_obs, "two-sided")
+pvalue
 ```
 
 *The p-value is 0. Reject the null. The mean sale price of homes in Ames is different (and much less than) the national home price in 2010.*
 
+```{r}
+sale_mean_ht |>
+  visualize() +
+  shade_p_value(obs_stat = price_mean_obs, direction = "two-sided")
+```
 
 ## A third choice for code
 
@@ -197,5 +202,4 @@ ames |>
          conf_level = 0.95)
 ```
 
-*We can see that the 95% CI is (177902, 183690). *
-
+*We can see that the 95% CI is (177902, 183690).*
