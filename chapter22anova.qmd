@@ -32,21 +32,33 @@ unique(nycflights$origin)
 ### Constant variance?
 
 ```{r}
-nycflights |>
+summarytable <- nycflights |>
   # Group by origin
-  group_by(origin) |>
+  group_by(origin, carrier) |>
   # Calculate the std dev of arrival delay as std_delay
-  summarize(sd_delay = sd(arr_delay))
+  summarize(mean_delay = mean(arr_delay), sd_delay = sd(arr_delay), median_delay = median(arr_delay), count = n())
+summarytable
 ```
 
 *The standard deviations do not appear too different.*
+
+## Generate a sample from the "population" of flights in 2013
+
+use this for all other calculations
+
+```{r}
+set.seed(9357)
+samp <- sample_n(nycflights, 200, replace = TRUE)
+head(samp)
+```
+
 
 ## Create density ridges plot to compare the 3 group distributions
 
 ```{r}
 # install the package ggridges
 library(ggridges)
-nycflights |>
+samp |>
   # Map wordsum to the x-axis and class to the y-axis
   ggplot(aes(x = arr_delay, y = origin)) +
   # Add density ridges to the plot! 
@@ -58,15 +70,27 @@ nycflights |>
 
 ```{r}
 # Run an analysis of variance on score vs. rank
-aov_delay_origin <- aov(arr_delay ~ origin, data = nycflights)
+aov_delay_origin <- aov(arr_delay ~ origin, data = samp)
 #summary(aov_delay_origin)
 # Tidy the model
 tidy(aov_delay_origin)
 ```
 
+```{r}
+# run the ANOVA on the original dataset and you get the opposite result
+# Run an analysis of variance on score vs. rank
+aov_delay_nyc <- aov(arr_delay ~ origin, data = nycflights)
+#summary(aov_delay_origin)
+# Tidy the model
+tidy(aov_delay_nyc)
+```
+
+
 ## Interpret the results
 
-The p-value of the ANOVA test is very small. Therefore we reject the null. There is very strong evidence that at least one mean arrival delay from one of the 3 airport origins is different.
+For the original data, the p-value of the ANOVA test is very small. Therefore we reject the null. There is very strong evidence that at least one mean arrival delay from one of the 3 airport origins is different.
+
+BUT from a random sample, the p-value is very large, meaning we fail to reject the null. This suggests that simply having a large sample size will coerce an effect, when there really is no effect. 
 
 ## Simulating samples under the null hypothesis
 
@@ -91,7 +115,7 @@ Step 1: Write the values of arr_delay on 32735 index cards (one card per person)
 null_distr <- nycflights |>
  specify(arr_delay ~ origin) |> 
   hypothesize(null = "independence") |> 
-  generate(reps = 1000, type = "permute") |> 
+  generate(reps = 500, type = "permute") |> 
   calculate(stat = "F")
 ```
 
@@ -103,16 +127,67 @@ null_distr |>
 
 *We can see that the observed F-statistic is very far above the F distribution. therefore we reject the null. There is very strong evidence that the mean arrival delay is different at at least one airport.*
 
+
+## Try all of that again, but use the small sample
+
+```{r}
+obs_stat_samp <- samp |> 
+  specify(arr_delay ~ origin) |> 
+  calculate(stat = "F")
+obs_stat_samp
+```
+
+
+
+```{r}
+null_distr_samp <- samp |>
+ specify(arr_delay ~ origin) |> 
+  hypothesize(null = "independence") |> 
+  generate(reps = 500, type = "permute") |> 
+  calculate(stat = "F")
+```
+
+```{r}
+null_distr_samp |> 
+  visualise() +
+  shade_p_value(obs_stat = obs_stat_samp, direction = "greater")
+```
+
+*Again, we get the opposite effect. This means sampling is incredibly important!!!!*
+
+
+
 ## Post hoc testing
 
-Once you reject the null, now you can determine by pair-wise testing which group's mean is different using a "family" error rate, and then distribute that level to each of the tests we are performing. The "family" error rate specifies an overall Type I error rate we are willing to have for all of tests you wish to perform. We will use alpha = 0.05
+If you reject the null, now you can determine by pair-wise testing which group's mean is different using a "family" error rate, and then distribute that level to each of the tests we are performing. The "family" error rate specifies an overall Type I error rate we are willing to have for all of tests you wish to perform. We will use alpha = 0.05
 
 There are many pairwise tests. We will use the TukeyHSD test on our original model, aov_delay_origin.
 
 ```{r}
-TukeyHSD(aov_delay_origin)
+TukeyHSD(aov_delay_nyc)
 ```
 
 ## How to read this output
 
 The p-adjusted values for comparing mean delays for JFK and EWR are significant The p-adjusted values for comparing mean delays for LGA and EWR are significant The p-adjusted values for comparing mean delays for LGA and JFK are not significant.
+
+
+## Non-parametric test Kruskall wallis Test
+
+```{r}
+ktest_nyc <- kruskal.test(arr_delay ~ origin, data = nycflights)
+ktest_nyc
+
+# and on the sample
+ktest_samp <- kruskal.test(arr_delay ~ origin, data = samp)
+ktest_samp
+```
+
+
+
+
+
+
+
+
+
