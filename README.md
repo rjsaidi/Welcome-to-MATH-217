@@ -22,7 +22,7 @@ This is our introduction to data, R, R Studio, and study design. Let's get start
 
 - Use these notes to get started:     [**Chapter 1 Notes - Intro to Data and R Studio**](./Math217_notes_ch1.pdf)
 - Here is your first Quarto document. You will learn to start coding with R Studio:
-     - [Chapter 1 Quarto Document](./chapter 1 intro to data and live coding.qmd)
+     - [Chapter 1 Quarto Document](./chapt1_intro_to_data_live_coding.qmd)
 - Use these notes to get started:     [**Chapter 2 Notes - Study Design**](./Math217_notes_ch2.pdf)
 - Use this quarto document to learn about populations, samples, and sampling distributions.
      - [Simulating Sampling Quarto Document](./ch2simulating_sampling.qmd)
