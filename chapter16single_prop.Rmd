@@ -31,17 +31,29 @@ ggplot(resume1, aes(x = called)) +
   geom_bar()
 ```
 
-## calculate exact proportion of the sample that responded this way
+## calculate exact proportion of the sample that responded this way: p-hat
 
 ```{r}
 p_hat_call <- resume1 |>
   summarize(prop_call = mean(called == "yes")) |>
   pull()
-
 p_hat_call
 ```
 
 *The proportion who received a callback in the dataset was 0.080.*
+
+## Test Basic Assumptions
+
+* observations are independent
+* np_hat >= 10 n(1-p_hat) >= 10
+
+```{r}
+resume1 |>
+  group_by(called)|>
+  count()
+```
+
+
 
 ### The 95% confidence interval can be calculated as the sample proportion plus or minus two standard errors of the sample proportion
 
@@ -57,10 +69,9 @@ Do this with the function **calculate()**
 
 ```{r}
 boot_dist_call <- resume1 |>
-  specify(response = called, success = "yes") |>
-  generate(reps = 500, type = "bootstrap") |>
+  specify(response = called, success = "yes") |> # single group
+  generate(reps = 1000, type = "bootstrap") |>
   calculate(stat = "prop")
-
 boot_dist_call
 ```
 
@@ -77,7 +88,6 @@ The standard deviation of the stat variable in this data frame (the bootstrap di
 SE_call <- boot_dist_call |>
   summarize(se = sd(stat)) |>
   pull()
-
 SE_call
 ```
 
@@ -90,6 +100,19 @@ c(p_hat_call - 1.96 * SE_call, p_hat_call + 1.96 * SE_call)
 ```
 
 *We are 95% confident that the true proportion of applicants receiving callbacks is between 7.28% and 8.81%.*
+
+## A more efficient way to get the CI
+
+Use get_ci
+
+
+```{r}
+ci <- get_ci(boot_dist_call, level=.95)
+ci
+```
+
+*We are 95% confident that the true proportion of applicants receiving callbacks is between 7.33% and 8.77%.*
+
 
 ## The normal distribution for confidence interval
 
@@ -164,10 +187,25 @@ ggplot(gss, aes(x=college)) +
 ## State the null and alternative hypotheses
 
 $H_o: p = 1/3$
+Ho: The proportion of US adults who have a college degree is 1/3.
 
 $H_a: p \neq 1/3$
+Ha: The proportion of US adults who have a college degree is different from 1/3.
 
-## Calculate the proportion
+
+## Check Success-Failure Condition
+
+np >=10
+n(1-p)>=10
+
+```{r}
+gss |>
+  group_by(college)|>
+  count()
+```
+
+
+## Calculate the sample proportion
 
 ```{r}
 p_hat <- gss |>
@@ -176,15 +214,19 @@ p_hat <- gss |>
 p_hat
 ```
 
+p-hat = 0.348
+
+
+
 ## Now perform the hypothesis test
 
 ```{r}
-null <- gss |>
+null_dist <- gss |>
   specify(response = college, success = "degree") |>
   hypothesize(null = "point", p = 1/3) |> 
-  generate(reps = 500, type = "draw") |> 
+  generate(reps = 1000, type = "draw") |> 
   calculate(stat = "prop")
-null
+null_dist
 ```
 
 ## Create a density curve of the null distribution
@@ -192,7 +234,7 @@ null
 Add a vertical line (geom_vline) to indicate where p-hat lies on the curve.
 
 ```{r}
-ggplot(null, aes(x = stat)) +
+ggplot(null_dist, aes(x = stat)) +
   geom_density() +
   geom_vline(
     xintercept = p_hat, 
@@ -203,10 +245,19 @@ ggplot(null, aes(x = stat)) +
 ## Calculate a two-tailed p-value (multiply by two)
 
 ```{r}
-pvalue <- null |>
+pvalue <- null_dist |>
   summarize(mean(stat > p_hat)) |>
   pull() * 2
 pvalue
 ```
 
-*The p-value is very large, at 0.46. We fail to reject the null. There is no evidence that the proportion of US adults with a college degree is different than 1/3 the population.*
+```{r}
+pvalue2 <- get_p_value(null_dist, p_hat, direction = "two-sided")
+pvalue2
+```
+
+
+*The p-value is very large, at 0.534. We fail to reject the null. There is no evidence that the proportion of US adults with a college degree is different than 1/3 the population.*
+
+
+

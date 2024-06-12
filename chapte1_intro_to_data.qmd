@@ -1,0 +1,140 @@
+---
+title: "chapter 1 notes"
+format: docx
+editor: visual
+---
+
+## load the libraries
+
+This is what plain text looks like
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(openintro)
+```
+
+## view loan50 data
+
+```{r}
+data("loan50")
+```
+
+## Scan the first 6 rows of the data
+
+```{r}
+head(loan50)
+```
+
+## What factors are in the "homeownership" variable?
+
+```{r}
+unique(loan50$state)
+```
+
+*Notice there are three levels: "rent", "mortgage", and "own"*
+
+## filter for renters rather than homeowners
+
+backwards arrow: \<- (less than symbol with a dash) : names a new subsetted dataframe
+
+```{r}
+loan50_rent <- loan50 |>  # |> piping operator - "and then"
+  filter(homeownership == "rent")
+head(loan50_rent)
+```
+
+## how many factors for "loan_purpose" are there?
+
+unique is used for categorical variables
+
+```{r}
+unique(loan50$loan_purpose) 
+```
+
+## What kind of values are in the "loan_amount" variable?
+
+use "summary" for numerical variables
+
+```{r}
+summary(loan50$loan_amount)
+# now define the mean loan amount
+avg_loan <- mean(loan50$loan_amount)
+```
+
+*We can see the average loan amount is \$17083.*
+
+## Create a new variable (using mutate)
+
+categorize loan_cat as: "at or above average" and "below average" loan amount
+
+```{r}
+loan_new <- loan50 |>
+  mutate(loan_cat = if_else(loan_amount < avg_loan, "below average","at or above average"))
+# view the newly created tibble
+head(loan_new)
+```
+
+## how many total renters are there?
+
+Notice a new variable, n, is created to show the counts.
+
+```{r}
+loan50 |> 
+  count(homeownership)
+```
+
+## Plot the loan_amount to the annual_income 
+
+ggplot a function in package ggplot2
+
+gg stands for the grammar of graphics
+
+aes stands for aesthetics
+
+```{r}
+ggplot(data = loan_new, aes(x = loan_amount, y = annual_income, color = loan_cat)) +
+  geom_point()+
+  geom_vline(xintercept = avg_loan, color = "lightblue")
+```
+
+## Now use "group_by" to do the same thing
+
+Notice if you create a new tibble with the backwards arrow, you have to "print" the tibble by naming it or calling head(new_df)
+
+```{r}
+loan_df <- loan50 |> 
+  group_by(homeownership) |> 
+  count()
+loan_df
+```
+
+## Calculate proportions of renters between 2 groups under loan_cat
+
+This method (using group_by first and then count) provides marginal row proportions
+
+```{r}
+prop1 <- loan_new  |>
+  # Group by "group"
+  group_by(loan_cat) |>
+  count(homeownership) |>
+  # Create new variable, prop, using mutate
+  mutate(prop = n/sum(n)) 
+prop1 
+```
+
+Filter further for homeownership == "rent" to compare whether loan_cat had higher proportions of those at or above the mean loan amount.
+
+```{r}
+
+prop2 <- loan_new  |>
+  # Group by "group"
+  group_by(loan_cat) |>
+  count(homeownership) |>
+  # Create new variable, prop, using mutate
+  mutate(prop = n/sum(n)) |>
+  filter(homeownership == "rent")
+prop2
+
+```
+
+*We can see that renters had higher proportions of loans below the average loan amount.*
