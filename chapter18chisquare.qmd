@@ -1,0 +1,140 @@
+---
+title: "Chapter 18 - Chi Square"
+author: "R Saidi"
+format: docx
+editor: visual
+---
+
+## Load the libraries and data
+
+```{r}
+#| message: false
+library(tidyverse)
+library(openintro)
+library(tidymodels)
+data("gss")
+```
+
+## A question in two variables
+
+Does level of education have an association with political party affiliation?
+
+## Chi Square
+
+When we are looking at a two-way table, we can explore the $\chi^2$ distribution
+
+## Start with a bar plot
+
+```{r}
+# Visualize distribution
+gss |>
+  ggplot(aes(x = partyid, fill = college)) +
+  # Add bar layer of proportions
+  geom_bar(position = "fill")
+```
+
+*The education proportions for each party look relatively similar.*
+
+## Remove position = "fill"
+
+```{r}
+gss |>
+  ggplot(aes(x = partyid, fill = college)) +
+  # Add bar layer of proportions
+  geom_bar()
+```
+
+## base R table
+
+```{r}
+obs_table <- table(gss$college, gss$partyid)
+obs_table
+```
+
+
+```{r}
+# From previous step
+obs <- gss |>
+  select(college, partyid) |>
+  tibble::as_tibble() |>
+  table()
+obs
+```
+
+## What is the DK? 
+
+DK seems to be some anomaly that needs to be removed. 
+
+```{r}
+gss$partyid <- as.character(gss$partyid) |> 
+  trimws() |> 
+  as.factor() 
+```
+
+
+```{r}
+# Now check that DK is removed
+unique(gss$partyid)
+```
+
+# Convert table back to tidy df
+
+```{r}
+obs |>
+  # Tidy the table
+  tidy() |>
+  # Expand out the counts
+  uncount(n)
+```
+
+## Perform a chi-squre hypothesis test
+
+```{r}
+# Create one permuted data set
+perm_1 <- gss |>
+  # Specify the variables of interest
+  specify(college ~ partyid) |>
+  # Set up the null
+  hypothesize(null = "independence") |>
+  # Generate a single permuted data set
+  generate(reps = 1, type = "permute")
+perm_1
+```
+
+```{r}
+# Visualize permuted data
+ggplot(perm_1, aes(x = partyid, fill = college)) +
+  # Add bar layer
+  geom_bar()
+```
+
+```{r}
+# Compute chi-squared stat
+chisq.test(perm_1$partyid, perm_1$college)
+```
+
+*With a p-value of 0.3608, there is no compelling evidence that there is an association between having a college degree or not and the political party affiliation.*
+
+
+## Fisher's Exact Test
+
+When basic assumptions for Chi-Square test (expected cell counts >= 5) are violated, we can try using the comparable non-parametric Fisher's Exact Test.
+
+
+(rowtot C success)*(rowtot C failure) / (samplesize C truetotal)
+
+## Example Below
+
+      true  false  total
+     
+yes     4     3      7
+no     13     8     21
+total  17    11     28
+      
+FE  =  ((7 C 4)  * (21 C 13)) / (28 C 17)
+
+```{r}
+# fisher.test(v1, v2)
+fisher.test(gss$college, gss$partyid)
+```
+
