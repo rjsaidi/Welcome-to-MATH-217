@@ -6,15 +6,15 @@ format: docx
 
 ## Load library tidyverse and resume dataset
 
-![](Fall 2023/resume.JPG){width="198"}
+![](Fall%202023/resume.JPG){width="198"}
 
 Set your working directory to find the saved dataset and use "head" to view the variables in the dataset
 
 ```{r message=FALSE, warning=FALSE}
 library(tidyverse)
 library(tidymodels)
-setwd("C:/Users/rsaidi/Dropbox/Rachel/MontColl/Datasets/Datasets")
-resume <- read_csv("resume.csv")
+library(openintro)
+data(resume)
 head(resume)
 ```
 
@@ -52,7 +52,7 @@ Start with the simple premise above, that years experience is associated with th
 ```{r}
 plot_log <- ggplot(data = resume, aes(y = received_callback, x = years_experience)) + 
   geom_jitter(width = 0, height = 0.05, alpha = 0.5) +
-  geom_smooth(method = "glm", se = FALSE, method.args = list(family = "binomial"))
+  geom_smooth(method = "glm", method.args = list(family = "binomial"))
 plot_log
 ```
 
@@ -70,16 +70,27 @@ Odds are commonly used to express uncertainty in a variety of contexts.
 
 ```{r}
 # using base r logistic regression
-
+#  model:  y ~ x
 fit_log <- glm(data = resume, received_callback ~ years_experience, family = binomial())
 summary(fit_log)
 ```
 
 *equation log_odds(received_callback) = -2.7596+0.039(years_experience)*
 
-# Use the **Tidymodels** package to create a model
+*Note the AIC is 2714.2. We will try to improve that later (the smaller, the better).*
 
-## Create the testing and training data by splitting
+log_odds(callback_5years experience) = -2.7596 + 0.039(5)
+
+```{r}
+exp(-2.456)/(1+exp(-2.456))
+  
+```
+
+# Use the **Tidymodels** package to create a regression model
+
+## Create the training, testing, and validation data by splitting
+
+Use initial_validation_split() function to create a random 3-way split the data into the
 
 ```{r}
 # convert received_callback to categorical variable
@@ -87,9 +98,10 @@ resume$received_callback <- as.factor(resume$received_callback)
 set.seed(123)
 
 #initial_split creates a single binary split of the data into a training set and testing set (the default is 75% training 25% testing)
-res_splits<- initial_split(resume, strata = received_callback)
+res_splits<- initial_validation_split(resume, strata = received_callback)
 
 callback_train <- training(res_splits)
+validation_set <- validation(res_splits)
 callback_test  <- testing(res_splits)
 ```
 
@@ -102,67 +114,144 @@ callback_train |>
   mutate(prop = n/sum(n))
 ```
 
-We see that in the training set, 8% of applicants did receive callbacks.
+We see that 7.9% of applicants in the training dataset received callbacks.
 
-## logistic model
+## Calculate training set proportions by callbacks
+
+```{r}
+validation_set |>
+  group_by(received_callback) |>
+  tally() |>
+  mutate(prop = n/sum(n))
+```
+
+The proportion of callbacks in the validation set is 9.03%
+
+## Calculate testing set proportions by callbacks
+
+```{r}
+callback_test |>
+  group_by(received_callback) |>
+  tally() |>
+  mutate(prop = n/sum(n))
+```
+
+We see that in the testing set, 8.5% of applicants did receive callbacks.
+
+For this case study, rather than using multiple iterations of resampling, let’s create a single resample called a validation set. In tidymodels, a validation set is treated as a single iteration of resampling. This will be a split from the 37,500 stays that were not used for testing, which we called hotel_other. This split creates two new datasets:
+
+-   the set held out for the purpose of measuring performance, called the validation set
+
+-   the remaining data used to fit the model, called the training set.
+
+![](testing_training_validation.JPG){width="438"}
+
+## Fitting Logistic Regression
+
+You can fit any type of model (supported by tidymodels) using the following steps.
+
+1.  Call the model function: here we called logistic_reg( ) as we want to fit a logistic regression model.
+
+2.  Use set_engine( ) function to supply the family of the model. The “glm” argument as Logistic regression comes under the Generalized Linear Regression family.
+
+3.  Use set_mode( ) function and supply the type of model you want to fit. Classify pos vs neg, so it is a classification.
+
+4.  Next, you need to use the fit( ) function to fit the model and inside that in the form y\~x, you have to provide the formula notation and dataset (callback_train).
+
+plus notation → diabetes \~ ind_variable 1 + ind_variable 2 + …….so on
 
 ```{r}
 logit_fit <- 
   logistic_reg(mode = "classification") |>
   set_engine(engine = "glm") |> 
+  set_mode("classification") |>
   fit(received_callback ~ years_experience, data = callback_train)
-logit_fit
+tidy(logit_fit)
 ```
 
-## Prediction
+## Odds Ratio
 
-To get predicted values we use the function **predict**.
+The interpretation of coefficients in the log-odds term does not make much sense if you need to report it in your article or publication. That is why the concept of odds ratio was introduced.
+
+The ODDS is the ratio of the probability of an event occurring to the event not occurring. When we take a ratio of two such odds it called Odds Ratio.
+
+you can get directly the odds ratios of the coefficient by supplying the exponentiate = True inside the tidy( ) function.
 
 ```{r}
-## get prediction on train set
-pred_logit_train <- predict(logit_fit, new_data = callback_train)
-## get prediction on test set
-pred_logit_test <- predict(logit_fit, new_data = callback_test)
-## get probabilities on test set
-prob_logit_test <- predict(logit_fit, new_data = callback_test, type="prob")
+tidy(logit_fit, exponentiate = TRUE)
+```
+
+## Model Prediction
+
+Test Data Class Prediction
+
+The very next step is to generate the test predictions that we could use for model evaluation. To generate the class prediction (pos/ neg) we can use the predict function and supply the trained model object, test dataset and the type which is here “class” as we want the class prediction, not probabilities.
+
+# To get predicted values we use the function **predict**.
+
+```{r}
+pred_class <- predict(logit_fit,
+                      new_data = callback_test,
+                      type = "class")
+
+pred_prob <- predict(logit_fit,
+                      new_data = callback_test,
+                      type = "prob")
+
+joined_pred_results <- callback_test |>
+  select(received_callback) |>
+  bind_cols(pred_class, pred_prob)
 ```
 
 ## Model performance
 
 **yardstick** is a package to get metrics on model performance. By default on classification problem yardstick::metrics returns accuracy and kappa.
 
+https://yardstick.tidymodels.org/
+
 ```{r}
 library(yardstick)
-metrics(bind_cols(callback_test, pred_logit_test), truth = received_callback, estimate = .pred_class)
+metrics(joined_pred_results, truth = received_callback, estimate = .pred_class)
 ```
 
-The accuracy is 91.4% - very close to the original data (1- p_hat).
+According to Wikipedia, *accuracy* is how close a given set of measurements (observations or readings) are to their true value.
+
+The accuracy of this model is 92.8%
+
+Accuracy is calculated by:
+
+(sensitivity+specificity)/(sensitivity+specificity+false_positive+false_negative)
+
+## kappa
+
+Kappa measures the model's reliability. It represents the extent to which the data collected in the study are correct representations of the variables measured.
+
+Since kap = 0, the model does not appear to be a good representation.
 
 ## The null model
 
-It will be useful to have our null model stored as a model object. We can create such an object using tidymodels by specifying a logistic regression model with no explanatory variables. The computational engine is glm because glm() is the name of the R function that actually fits vocab("generalized linear models") (of which logistic regression is a special case).
+It will be useful to have our null model stored as a model object. We can create such an object using tidymodels by specifying a logistic regression model with **no explanatory variables**.
 
 ```{r}
-mod_null <- 
+null_mod <- 
   logistic_reg(mode = "classification") |>
   set_engine("glm") |>
   fit(received_callback ~ 1, data = callback_train)
-mod_null
+tidy(null_mod)
 ```
 
 ## Compute the accuracy of the null model
 
-According to Wikipedia, *accuracy* is how close a given set of measurements (observations or readings) are to their true value.
-
 ```{r}
-pred <- callback_train |>
-  select(received_callback, years_experience) |>
-  bind_cols(predict(mod_null, new_data = callback_train, type = "class")) |>
-  rename(mod_null = .pred_class)
-accuracy(pred, received_callback, mod_null)
+pred <- callback_train |>  # use the training dataset
+  select(received_callback, years_experience) |> #select only these columns
+  bind_cols(predict(null_mod, new_data = callback_train, type = "class"))|>
+  rename(null_mod = .pred_class)
+
+accuracy(pred, received_callback, null_mod)
 ```
 
-The accuracy estimate of this null model is almost the same: = 92.1%.
+The accuracy estimate of this null model is almost the same as the prior model: = 92.0%
 
 ## Create a confusion matrix
 
@@ -170,7 +259,7 @@ This is a two-way table that counts how often our model made the correct predict
 
 ```{r}
 confusion_null <- pred |>
-  conf_mat(truth = received_callback, estimate = mod_null)
+  conf_mat(truth = received_callback, estimate = null_mod)
 confusion_null
 ```
 
@@ -182,11 +271,14 @@ Start by building the logit model using training data
 
 Beating the null model shouldn't be hard. Our first attempt will be to employ a simple logistic regression model. First, we'll fit the model using only one explanatory variable: years_experience. It stands to reason that more experienced people are more likely to get a job offer.
 
+*This is the same as the first model we built in base R at the beginning.*
+
 ```{r}
 mod_log_1 <- 
   logistic_reg(mode = "classification") |>
   set_engine("glm") |>
   fit(received_callback ~ years_experience, data = callback_train)
+tidy(mod_log_1)
 ```
 
 ## Illustrate the predicted probability
@@ -217,14 +309,15 @@ Receiver Operating Characteristics Curve traces the percentage of true positives
 The greater the area under the ROC curve, better the predictive ability of the model
 
 ```{r}
-roc_auc(bind_cols(callback_test, prob_logit_test), truth = received_callback, .pred_1)
+roc_auc(bind_cols(callback_test, pred_prob), truth = received_callback, .pred_1)
 
 ```
 
 The AUC estimate is 43.3% - this is VERY low, meaning the model is not great for predicting probabilities.
 
 ```{r}
-roc_data <- roc_curve(bind_cols(callback_test, prob_logit_test), truth = received_callback, .pred_1) 
+roc_data <- roc_curve(bind_cols(callback_test, pred_prob), truth = received_callback, .pred_1) 
+
 roc_data |>  
   ggplot(aes(x = 1 - specificity, y = sensitivity)) +
   geom_path() +
@@ -240,8 +333,8 @@ roc_data |>
 Computing the full logistic regression model will feel similar to the process for computing the full multiple linear regression model. We will use **GLM** to replace **LM** and we need to include **family = binomial()**
 
 ```{r}
-log_mod1 <- glm(data=resume, received_callback ~ job_city + college_degree + years_experience + honors + military + has_email_address + race + gender + computer_skills + resume_quality, family = binomial())
-summary(log_mod1)
+log_mod_full <- glm(data=resume, received_callback ~ job_city + college_degree + years_experience + honors + military + has_email_address + race + gender + computer_skills + resume_quality, family = binomial())
+summary(log_mod_full)
 ```
 
 ## Performance of Logistic Regression Model
@@ -262,7 +355,7 @@ log_mod2 <- glm(data=resume, received_callback ~ job_city + years_experience + h
 summary(log_mod2)
 ```
 
-The AIC decreased to 2675 and all p-values are relatively low.
+The AIC decreased to 2675 and all p-values are relatively low. This could possibly be our best model.
 
 ## VIF - Variance Inflation Factor
 
