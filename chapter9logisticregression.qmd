@@ -357,6 +357,15 @@ summary(log_mod2)
 
 The AIC decreased to 2675 and all p-values are relatively low. This could possibly be our best model.
 
+## Predicted  probability of receiving callbacks based on model predictors
+
+The augment() function on the model object will return a data frame with—among other things—the fitted values, with .fitted. Be sure to include type.predict = "response"
+
+```{r}
+augment(log_mod2, type.predict = "response")
+```
+
+
 ## VIF - Variance Inflation Factor
 
 Like in case of linear regression, we should check for multicollinearity in the model.
