@@ -11,15 +11,14 @@ library(tidyverse)
 library(knitr)
 library(kableExtra)
 library(tidymodels)
-setwd("C:/Users/rsaidi/Dropbox/Rachel/MontColl/Math217/Notes")
-sex_disc <- read_csv("sex_discrimination.csv")
-set.seed(9753)  # allows to replicate results each time document is rendered
+library(openintro)
+data(sex_discrimination)
+sex_disc <- sex_discrimination
 ```
 
 ```{r}
-unique(sex_disc$decision)
+unique(sex_disc$sex)
 ```
-
 
 ## This vignette will help you understand HT using tidymodels
 
@@ -46,7 +45,8 @@ kbl(decision_table, caption = "Two-Way Table") |>
 ## This is the same table, but with proportions rounded to 3 decimals
 
 ```{r}
-kbl(round(proportions(decision_table, "sex"),3)) |> # marginal proportions by sex for promotion decision rounded to 3 places
+kbl(round(proportions(decision_table, "sex"),3)) |> 
+  # marginal proportions by sex for promotion decision rounded to 3 places
   kable_styling()|>
   row_spec(row = 0, color = "dodgerblue")
 ```
@@ -69,7 +69,6 @@ perm1 <- sex_disc |>
             diff_orig = diff(prop_promoted))  # not promoted - promoted
 perm1
 ```
-
 
 ```{r}
 kbl(perm1)|>
@@ -99,10 +98,7 @@ perm_reps <- sex_disc |>
 perm_reps
 ```
 
-kbl(perm_reps) |>
-  kable_styling() |>
-    row_spec(row = 0, color = "dodgerblue")
-
+kbl(perm_reps) \|\> kable_styling() \|\> row_spec(row = 0, color = "dodgerblue")
 
 *Notice the variation in the permutation differences.*
 
@@ -111,25 +107,13 @@ ggplot(perm_reps, aes(diff_perm))+
   geom_histogram(bins = 25)
 ```
 
-## Repeat the permutation 1000 times and plot all differences
-
-```{r}
-perm_1000_reps <- sex_disc |>
-  rep_sample_n(size = nrow(sex_disc), reps = 1000, replace = FALSE) |>
-  mutate(decision_perm = sample(decision)) |>
-  group_by(replicate, sex) |>
-  summarize(prop_promoted_perm = mean(decision_perm == "not promoted"),
-            prop_promoted = mean(decision == "not promoted")) |>
-  summarize(diff_perm = diff(prop_promoted_perm), 
-            diff_orig = diff(prop_promoted))  # not promoted - promoted
-```
 
 ## Create a dotplot of the replications of permutated differences
 
 Show the cut-off for +/- the original difference in proportions of "promoted"
 
 ```{r}
-plot_perm <- ggplot(perm_1000_reps, aes(diff_perm)) +
+plot_perm <- ggplot(perm_reps, aes(diff_perm)) +
   geom_dotplot(binwidth = 0.01) +
   geom_vline(xintercept = c(-0.292, 0.292), color = "blue", linetype = "dotted", linewidth=1) +
   labs(title = "Dotplot of 1000 Replications of Permutations\n of Differences of Proportions")
@@ -184,7 +168,6 @@ library(infer)
 #get_p_value
 ```
 
-
 ```{r}
 pvalue <- get_p_value(decide_perm, decide_obs,  direction = "two-sided")
 pvalue
@@ -201,20 +184,17 @@ pvalue <- get_p_value(decide_perm, decide_obs,  direction = "greater")
 pvalue
 ```
 
-
 ## Conclusion based on p-value
 
 This p-value suggests that such a difference from chance alone, assuming the null hypothesis was true, would be moderately rare: it would only happen about 46 in 1000 times. When results like these are inconsistent with Ho, we reject Ho in favor of Ha. Here, we concluded there was discrimination against female candidates. The 46-in-1000 chance is what we call a p-value, which is a probability quantifying the strength of the evidence against the null hypothesis, given the observed data.
 
 ## Formulaic conclusion
 
-1. p-value 0.046 is less than 0.05. 
+1.  p-value 0.046 is less than 0.05.
 
-2. Reject the null.  (if larger than 0.05, "Fail to reject the null.")
+2.  Reject the null. (if larger than 0.05, "Fail to reject the null.")
 
-3. ** There is moderate evidence ** that there is discrimination in decisions to promote employees based on sex. 
-
-
+3.  \*\* There is moderate evidence \*\* that there is discrimination in decisions to promote employees based on sex.
 
 ## For future work
 
@@ -226,26 +206,21 @@ In the future, we will look at a different test, call the Chi Square Test, which
 chisq.test(sex_disc$decision, sex_disc$sex)
 ```
 
-Please note that the chisq.test() gave a p-value 0.051, which is slightly larger than 0.05. What do we conclude???? 
+Please note that the chisq.test() gave a p-value 0.051, which is slightly larger than 0.05. What do we conclude????
 
-Because 0.051 > 0.05, fail to reject the null. 
+Because 0.051 \> 0.05, fail to reject the null.
 
 "There is no evidence that there is bias in decisions to promote based on sex."
 
-
-
-
 ## Using base R for prop.test()
 
-You must use values from the original table cell counts 
+You must use values from the original table cell counts
 
 ```{r}
 #prop.test(x, n, p = NULL, alternative = c("two.sided", "less", "greater"), conf.level = 0.95, correct = TRUE)
 # for 2 groups, use c(x1,x2), c(n1,n2)
 prop.test(c(10,3),c(24,24), alternative = "two.sided")
 ```
-
-
 
 # Chapter 12 Confidence Intervals
 
@@ -259,9 +234,7 @@ The same variability can be measured through a different mechanism. As before, i
 
 ### Create bootstrap distribution of single proportion of females not promoted
 
-specify
-generate
-calculate
+specify generate calculate
 
 ```{r}
 # Compute p-hat* for each resampled proportion of females who were not promoted
@@ -289,7 +262,6 @@ fprops <- sex_disc |>
 fprops  
 ```
 
-
 ```{r}
 # Manually calculate a 95% percentile interval
 fprops_boot |>
@@ -311,6 +283,5 @@ percentile_ci
 We are 95% confident that the true proportion of women who are not promoted is between 20.8% and 62.5%.
 
 *Note - this is a wide range of values, so not very precise*
-
 
 We are 90% confident that the true proportion of women who are not promoted is between 25% and 58.3%.
