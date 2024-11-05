@@ -24,15 +24,13 @@ library(openintro)
 data("run17")
 ```
 
-
 ```{r}
 unique(run17$event)
 ```
 
-
 ## Mutate the variable net_sec to convert to minutes
 
-First, filter out for 5K event times 
+First, filter out for 5K event times
 
 ```{r}
 run17_1 <- run17 |>
@@ -45,7 +43,7 @@ head(run17_1)
 
 ```{r}
 # create a vector of size 100 for minutes from 2017
-run17_samp <- sample(run17_1$minutes, size = 100, replace = FALSE)
+run17_samp <- sample_n(run17_1, size = 100, replace = FALSE)
 summary(run17_samp)
 ```
 
@@ -59,20 +57,19 @@ t.test(x, mu = 0, alternative = "two.sided") t.test(x, mu = 0, alternative = "le
 
 ```{r}
 # compare the mean from the samples from 2017 to the mean in 2006
-t.test(run17_samp, mu = 93.29, alternative = "two.sided")
+t.test(run17_samp$minutes, mu = 93.29, alternative = "two.sided")
 ```
 
 *t = 2.1057, df = 99, p-value = 0.03776*
 
 *Reject the null. There is compelling evidence that the mean in 2017 is different from the mean in 2006.*
 
-
 ## 95% CI mean finishings times in 2017 using tidymodels
 
 create a bootstrap ci
 
 ```{r}
-boot_dist <- run17_1 |>
+boot_dist <- run17_samp |>
   specify(response = minutes) |>
   generate(reps = 1000, type = "bootstrap")|>
   calculate(stat = "mean")
@@ -84,15 +81,14 @@ ci <- get_ci(boot_dist, level = .95)
 ci
 ```
 
-*We are 95% confident that the true mean finishing time for the 10K Cherry Blossom race in 2017 is between 97.559 and 98.060 minutes.*
+*We are 95% confident that the true mean finishing time for the 10K Cherry Blossom race in 2017 is between 93.844 to 99.901 minutes.*
 
-## Now work with the Ames, IA home sale price variable in ames dataset
+## Now work with the Ames, IA home sale price variable in ames dataset in 2010
 
 ```{r}
 data("ames")
 head(ames)
 ```
-
 
 ## There are 74 variables about house sale characteristics
 
@@ -113,7 +109,6 @@ samp_price <- sample_n(ames, size = 100, replace = FALSE)
 head(samp_price)
 ```
 
-
 ## The simple code to create a 95% CI for single mean
 
 Use t.test(). You must indicate the variable of interest
@@ -122,27 +117,25 @@ Use t.test(). You must indicate the variable of interest
 t.test(samp_price$Sale_Price, conf.level = .95)  # defaults to null = 0
 ```
 
-*We are 95% confident that the mean sale price for homes in Ames is between $155,019 and $184,587.7.*
+*We are 95% confident that the mean sale price for homes in Ames, IA in 2010 is between \$155,019 and \$184,587.7.*
 
 ##Answer the question:
 
 Test to determine if the mean home sale price in Ames was different from the national average at that time from 2006-2010.
 
-The average home price in the US in 2010 was $222,900.
+The average home price in the US in 2010 was \$222,900.
 
-Ho: The mean home sale price in Ames, IA is the same as national average.
-Ha:  """"" is different from """
+Ho: The mean home sale price in Ames, IA in 2010 is the same as national average of $222,900. 
+
+Ha: """"" is different from """
 
 ```{r}
 t.test(samp_price$Sale_Price, mu=222900)
 ```
 
-*The p-value is very small. We reject the null. There is very strong evidence that the true mean home sale price in Ames, IA in 2010 is different from the national home sale price of $222,900.*
+*The p-value is very small. We reject the null. There is very strong evidence that the true mean home sale price in Ames, IA in 2010 is different from the national home sale price of \$222,900.*
 
-
-
-*We are 95% confident that the true median home sale price in Ames is between $156716.1	and $184598.2	*
-
+*We are 95% confident that the true median home sale price in Ames is between \$156716.1 and \$184598.2*
 
 ## Perform the hypothesis test using tidymodels
 
@@ -192,10 +185,7 @@ sale_mean_ht |>
   shade_p_value(obs_stat = price_mean_obs, direction = "two-sided")
 ```
 
-
 *We can see that the 95% CI is (177902, 183690).*
-
-
 
 ## Now using tidymodels code for a 95% CI for the ames house prices.
 
