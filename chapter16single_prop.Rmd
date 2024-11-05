@@ -45,7 +45,7 @@ p_hat_call
 ## Test Basic Assumptions
 
 * observations are independent
-* np_hat >= 10 n(1-p_hat) >= 10
+* np_hat >= 10 n(1-p_hat) >= 10  (Success-Failure Condition)
 
 ```{r}
 resume1 |>
