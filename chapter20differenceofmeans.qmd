@@ -38,6 +38,12 @@ unique(births14_a$habit)
 ```
 
 ```{r}
+ggplot(births14_a, aes(x=habit, y=weight, fill = habit))+
+  geom_boxplot()+
+  geom_jitter(alpha = .2)
+```
+
+```{r}
 births_table <- births14_a |>
   group_by(habit) |>
   count()
@@ -51,9 +57,9 @@ ggplot(births14_a, aes(weight, color = habit))+
   geom_density()
 ```
 
-*We can see the density plots are skewed left, but the sample size is 1000, so it passes the CLT)*
+*We can see the density plots are skewed left, but the sample size is 981, so it passes the CLT)*
 
-## t.test for difference of means
+## t.test for difference of means in base R
 
 Use a t.test for difference of means to compare mean birth weights of babies born to smoking mothers versus non-smoking mothers.
 
@@ -67,9 +73,6 @@ t.test(births14_a$weight ~ births14_a$habit)
 
 ## Alternate code using t_test
 
-```{r}
-?t_test
-```
 
 ```{r}
 # use package: infer (in tidymodels)
@@ -78,7 +81,7 @@ births14_a |>
          explanatory = habit,
          null = 0, 
          alternative = "two-sided", 
-         conf_int = FALSE)
+         conf_int = TRUE)
 ```
 
 ## Alternate code using randomization
@@ -105,14 +108,15 @@ diff_ht_mean <- births14_a |>
   generate(reps = 1000, type = "permute") |>    # shuffle 1000 times
   calculate(stat = "diff in means", order = c("nonsmoker", "smoker")) 
 # Specify to calculate a difference in means and what order of subtraction to use
+head(diff_ht_mean)
 ```
 
 ## View a histogram of randomized distribution under the null
 
 ```{r}
-ggplot(diff_ht_mean, aes(stat)) +
-  geom_histogram() +
-  geom_vline(xintercept = pull(diff_mean_obs), color = "red")
+ggplot(diff_ht_mean, aes(x=stat))+
+  geom_histogram()+
+  geom_vline(xintercept = pull(diff_mean_obs), color = "blue")
 ```
 
 ## Calculate the p-value
@@ -152,16 +156,19 @@ library(BSDA)
 tsum.test(3.5, 5.17, 9, -4.33, 2.76, 9)
 ```
 
-## Bootstrap code
+## Bootstrap code for difference in 2 group means
+
+Comparing the mean birthweight between newborns of non-smoking and smoking mothers.
 
 ```{r}
 diff_mean_ci <- births14_a |>
   # Specify weight vs. habit
   specify(weight ~ habit) |>
   # Generate 1500 bootstrap replicates
-  generate(reps = 1500, type = "bootstrap") |>
+  generate(reps = 1000, type = "bootstrap") |>
   # Calculate the difference in means, nonsmoker then smoker
   calculate(stat = "diff in means", order = c("nonsmoker", "smoker"))
+diff_mean_ci
 ```
 
 ## Now calculate the 95% CI
@@ -169,12 +176,18 @@ diff_mean_ci <- births14_a |>
 ```{r}
 # Calculate the 95% CI via percentile method
 diff_mean_ci |>
-  get_confidence_interval(level = 0.95, type = "percentile")
+  get_ci(level = 0.95)
 ```
 
 ### Conclusion:
 
 Zero is not included. We are 95% confident that the true difference in mean weight for babies is between 0.31 and 0.90 lbs higher for nonsmoking mothers versus smoking mothers.
+
+# What to do when the basic assumptions fail for a t.test
+
+When the sample sizes for each group are small AND the distributions are not bell-shaped.
+
+Use the raw data from the stem_cell dataset from openintro.org
 
 ```{r}
 stem <- stem_cell |>
@@ -186,7 +199,8 @@ Side-by-side boxplots
 
 ```{r}
 ggplot(stem, aes(trmt, diff))+
-  geom_boxplot()
+  geom_boxplot()+
+  geom_jitter(alpha = .5)
 ```
 
 histograms/density plots
@@ -196,27 +210,27 @@ ggplot(stem, aes(diff, color = trmt))+
   geom_density()
 ```
 
-# When the basic assumptions fail for a t.test
+## When checking the basic assumptions, check the distribution AND the sample sizes
 
-When the sample sizes for each group are small AND the distributions are not bell-shaped.
+```{r}
+stem |>
+  group_by(trmt)|>
+  count()
+```
 
-## Non-parametric approach
+*We can see the sample sizes are VERY small. We need to use a non-parametric approach.*
+
+
+## Non-parametric approach (not computing the means)
 
 Wilcox Mann Whitney Test
 
-Null:  There is no difference in heart pumping capacity between control and treatment groups.
+Null: There is no difference in heart pumping capacity between control and treatment groups.
 
 Alternative: There is a shift in distributions between the control and treatment groups for heart pumping capacity.
 
-
 ```{r}
-wilcox.test(stem$diff ~ stem$trmt)
+wilcox.test(stem$diff ~ stem$trmt,  conf.int = TRUE, conf.level = 0.95,) #y~x
 ```
 
-
-
-*Conclusion: Because the p-value is very small, there is a right shift in the difference in heat pumping capcity after treatment for the ESC group over the control group.*
-
-
-
-
+*Conclusion: Because the p-value is very small, there is a right shift in the difference in heat pumping capcity between treatment for the ESC group over the control group.*
