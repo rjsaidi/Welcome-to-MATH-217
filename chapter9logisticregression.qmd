@@ -2,61 +2,110 @@
 title: "chapter 9 logistic regression"
 author: Rachel Saidi
 format: docx
+toc: true
 ---
 
-## Load library tidyverse and resume dataset
+## Load library tidyverse and heart transplant dataset
 
-![](Fall%202023/resume.JPG){width="198"}
+[![https://www.mayoclinic.org/tests-procedures/heart-transplant/about/pac-20384750](heart transplant.JPG){width="483"}](https://www.mayoclinic.org/tests-procedures/heart-transplant/about/pac-20384750)
 
-Set your working directory to find the saved dataset and use "head" to view the variables in the dataset
+Load libraries and use "data" and "head" to view the variables in the dataset
 
 ```{r message=FALSE, warning=FALSE}
 library(tidyverse)
 library(tidymodels)
 library(openintro)
-data(resume)
-head(resume)
+data("heart_transplant")
+head(heart_transplant)
+heart <- heart_transplant #rename the dataset with a shorter name
 ```
 
+## Ensure the response variable is binary
+
 ```{r}
-unique(resume$received_callback)
+unique(heart$survived)
 ```
 
 ## List all variables in the dataset
 
 ```{r}
-names(resume)
+names(heart)
 ```
 
 ## Visualizing the data
 
-Let's start by looking at whether an applicant received a callback based on years experience.
-
-## Ensure the response variable is binary
-
-Check out **received_callback** to be sure that the values are zeros or ones. In our case, we are fine. If they are not, you can use the code below to change it.
-
-data \<- data \|\> mutate(newvar = ifelse(oldvar == "yes", 1, 0))
+Let's start by looking at whether an applicant survived the transplant based on years.
 
 Note that in the plot below, we use the **geom_jitter()** function to create the illusion of separation in our data. Because the y value is categorical, all of the points would either lie exactly on "dead" or "alive", making the individual points hard to see. To counteract this, geom_jitter() will move the points a small random amount up or down.
 
 ```{r}
-ggplot(data = resume, aes(x = years_experience, y = received_callback)) + 
-  geom_jitter(width = .05, height = 0.05, alpha = 0.3)
+ggplot(data = heart, aes(x = age, y = survived)) + 
+  geom_jitter(width = .09, height = 0.09, alpha = 0.2)
 ```
 
-## Fit a logistic regression model
+## Make a binary variable
 
-Start with the simple premise above, that years experience is associated with the likelihood of receiving a callback.
+First, we have a technical problem, in that the levels of our response variable are labels, and you can’t build a regression model to a variable that consists of words! We can get around this by creating a new variable that is binary (either 0 or 1), based on whether the patient survived to the end of the study. We call this new variable is_alive.
 
 ```{r}
-plot_log <- ggplot(data = resume, aes(y = received_callback, x = years_experience)) + 
-  geom_jitter(width = 0, height = 0.05, alpha = 0.5) +
-  geom_smooth(method = "glm", method.args = list(family = "binomial"))
+heart1 <- heart|>
+  mutate(is_alive = ifelse(survived == "alive", 1, 0))
+```
+
+## Visualize a binary response
+
+We can then visualize our data_space. The vertical axis can now be thought of as the probability of being alive at the end of the study, given one’s age at the beginning.
+
+```{r}
+ggplot(data = heart1, aes(x = age, y = is_alive)) + 
+  geom_jitter(width = 0, height = 0.05, alpha = 0.5)
+```
+
+## Generalized linear models
+
+Thankfully, a modeling framework exists that generalizes regression to include response variables that are non-normally distributed. This family is called generalized linear models or GLMs for short. One member of the family of GLMs is called logistic regression, and this is the one that models a binary response variable.
+
+A full treatment of GLMs is beyond the scope of this tutorial, but the basic idea is that you apply a so-called link function to appropriately transform the scale of the response variable to match the output of a linear model. The link function used by logistic regression is the logit function. This constrains the fitted values of the model to always lie between 0 and 1, as a valid probability must.
+
+In this lesson we will cover: - generalization of multiple regression - model non-normal responses - special case: logistic regression - models binary response - uses logit link function:
+
+$logit(p) = log(p/(1-p)) = \beta_0 + \beta_1*x$
+
+Fitting a GLM
+
+```{r}
+fit1 <- glm(formula = is_alive ~ age, family = binomial, data = heart1)
+summary(fit1)
+```
+
+```{r}
+plot_log <- ggplot(data = heart1, aes(y = is_alive, x = age)) + 
+  geom_jitter(width = .05, height = 0.05, alpha = 0.2) +
+  geom_smooth(method = "glm", color = "purple", method.args = list(family = "binomial"))
 plot_log
 ```
 
-geom_smooth(method = "glm") creates a **sigmoid** curve, like a stretched-out S. This curve fits to the binary values (zeros and ones plotted). It shows the predicted probabilities of receiving a callback, based on years experience. You can see that even a candidate with 20 years of experience has about a 12.5% chance of receiving a callback.
+geom_smooth(method = "glm") creates a **sigmoid** curve, like a stretched-out S. This curve fits to the binary values (zeros and ones plotted). It shows the predicted probabilities of being alive, based on age.
+
+*As an example, a 60 year old patient has an approximately 12-13% probability of survival.*
+
+The probability equation is:
+
+$\hat{y} = \frac{exp(\hat{\beta_0}+\hat{\beta_1}*x)}{1+exp(\hat{\beta_0}+\hat{\beta_1}*x)}$
+
+Here, we compute the fitted probabilities using the augment() function.
+
+
+Set the type.predict argument to “response” to retrieve the **fitted values** on the familiar probability scale.
+
+```{r}
+heart_plus <- fit1 |>
+  augment(type.predict = "response") |>
+  mutate(y_hat = .fitted)
+heart_plus
+```
+
+
 
 ## Odds scale
 
@@ -64,87 +113,89 @@ To combat the problem of the scale of the y variable, we can change the scale of
 
 odds(y-hat)= y-hat / (1−y-hat) = exp(β_0+β_1⋅x)
 
-Thus, if the probability of receiving a callback is 10%, then the odds of receiving a callback are .1/(1-.1) = 1:9
 
-Odds are commonly used to express uncertainty in a variety of contexts.
+$odds\hat{y} = \frac{hat{y}{1-hat{y}}$
 
-```{r}
-# using base r logistic regression
-#  model:  y ~ x
-fit_log <- glm(data = resume, received_callback ~ years_experience, family = binomial())
-summary(fit_log)
-```
+Thus, if the probability of surviving is 70%, then the odds of surviving is .7/(1-.7) = .7/.3 = 7:3.
 
-*equation log_odds(received_callback) = -2.7596+0.039(years_experience)*
+The probability scale is the easiest to understand, but it makes the logistic function difficult to interpret. Conversely the logistic function becomes a line on the log-odds scale. This makes the function easy to interpret, but the log of the odds is hard to grapple with. The odds scale lies somewhere in between.
 
-*Note the AIC is 2714.2. We will try to improve that later (the smaller, the better).*
+## Odds Ratios
 
-log_odds(callback_5years experience) = -2.7596 + 0.039(5)
+$OR = \frac{exp(\hat{\beta_0}+\hat{\beta_1}*(x+1))}{exp(\hat{\beta_0}+\hat{\beta_1}*x)} = exp\beta_1$
 
 ```{r}
-exp(-2.456)/(1+exp(-2.456))
-  
+exp(coef(fit1))
 ```
+
+
+The equation of the model is:
+
+log(odds)(is_alive) = 4.7797 + 0.9432(age).
+
+
+
+## Example prediction
+
+```{r}
+age_70 <- data.frame(age = 70, transplant = "treatment")
+
+augment(fit1, newdata = age_70, type.predict = "response")
+```
+
+*A 70 year old has a predicted probability of 7.39% survival five years after a heart transplant.*
+
+
+
+
+
+## Confusion matrix
+
+```{r}
+fit_plus <- augment(fit1, type.predict = "response") |>
+  mutate(alive_hat = round(.fitted))
+
+fit_plus |>
+  select(is_alive, alive_hat) |>
+  table()
+```
+
+One common way of assessing performance of models for a categorical response is via a confusion matrix. This simply cross-tabulates the reality (is_alive) with what our model predicted (alive_hat). In this case, our model predicted that 96 patients would die, and only 7 would live. Of those 96, 71 actually did die, while of the 7, 3 actually lived. Thus, our overall accuracy was 74 out of 103, or about 72%.
+
+
 
 # Use the **Tidymodels** package to create a regression model
 
+
+
 ## Create the training, testing, and validation data by splitting
 
-Use initial_validation_split() function to create a random 3-way split the data into the
+Initial_split creates a single binary split of the data into a training set and testing set (the default is 75% training 25% testing)
 
 ```{r}
-# convert received_callback to categorical variable
-resume$received_callback <- as.factor(resume$received_callback)
 set.seed(123)
 
-#initial_split creates a single binary split of the data into a training set and testing set (the default is 75% training 25% testing)
-res_splits<- initial_validation_split(resume, strata = received_callback)
+res_splits<- initial_split(heart1, strata = is_alive)
 
-callback_train <- training(res_splits)
-validation_set <- validation(res_splits)
-callback_test  <- testing(res_splits)
+alive_train <- training(res_splits)
+alive_test  <- testing(res_splits)
 ```
 
-## Calculate training set proportions by callbacks
+## Calculate training set proportions by is_alive
 
 ```{r}
-callback_train |>
-  group_by(received_callback) |>
+alive_train |>
+  group_by(is_alive) |>
   tally() |>
   mutate(prop = n/sum(n))
 ```
 
-We see that 7.9% of applicants in the training dataset received callbacks.
 
-## Calculate training set proportions by callbacks
+*We can see that 72.8% are alive versus 27.2% are not alive 5 years after transplant surgery.*
 
-```{r}
-validation_set |>
-  group_by(received_callback) |>
-  tally() |>
-  mutate(prop = n/sum(n))
-```
+*This is called "imbalanced", which can lead to biased results. A biased sample can often cause a great amount of disorder to the analysis.*
 
-The proportion of callbacks in the validation set is 9.03%
 
-## Calculate testing set proportions by callbacks
-
-```{r}
-callback_test |>
-  group_by(received_callback) |>
-  tally() |>
-  mutate(prop = n/sum(n))
-```
-
-We see that in the testing set, 8.5% of applicants did receive callbacks.
-
-For this case study, rather than using multiple iterations of resampling, let’s create a single resample called a validation set. In tidymodels, a validation set is treated as a single iteration of resampling. This will be a split from the 37,500 stays that were not used for testing, which we called hotel_other. This split creates two new datasets:
-
--   the set held out for the purpose of measuring performance, called the validation set
-
--   the remaining data used to fit the model, called the training set.
-
-![](testing_training_validation.JPG){width="438"}
 
 ## Fitting Logistic Regression
 
@@ -154,20 +205,26 @@ You can fit any type of model (supported by tidymodels) using the following step
 
 2.  Use set_engine( ) function to supply the family of the model. The “glm” argument as Logistic regression comes under the Generalized Linear Regression family.
 
-3.  Use set_mode( ) function and supply the type of model you want to fit. Classify pos vs neg, so it is a classification.
-
-4.  Next, you need to use the fit( ) function to fit the model and inside that in the form y\~x, you have to provide the formula notation and dataset (callback_train).
+3.  Next, you need to use the fit( ) function to fit the model and inside that in the form y\~x, you have to provide the formula notation and dataset (callback_train).
 
 plus notation → diabetes \~ ind_variable 1 + ind_variable 2 + …….so on
 
 ```{r}
-logit_fit <- 
+logit_fit_train <- 
   logistic_reg(mode = "classification") |>
   set_engine(engine = "glm") |> 
-  set_mode("classification") |>
-  fit(received_callback ~ years_experience, data = callback_train)
-tidy(logit_fit)
+  fit(survived ~ age, data = alive_train)
+logit_fit_train
 ```
+
+
+*This model should be similar to the model we built using glm in the base R.*
+
+## The AIC (Akaike information criterion): assesses the model in comparison to other models; the lower this value, the better the model.  
+
+*This first training model shows AIC: 81.76 which is better than the AIC of 117 from the full dataset.*
+
+
 
 ## Odds Ratio
 
@@ -178,8 +235,27 @@ The ODDS is the ratio of the probability of an event occurring to the event not 
 you can get directly the odds ratios of the coefficient by supplying the exponentiate = True inside the tidy( ) function.
 
 ```{r}
-tidy(logit_fit, exponentiate = TRUE)
+tidy(logit_fit_train, exponentiate = TRUE)
 ```
+
+
+## Illustrate the predicted probability
+
+Illustrate how the predicted probability of dying varies in our simple logistic regression model with respect to a person's age. Notice the sigmoid curve (in purple) - this is the shape of a logistic curve.
+
+```{r}
+ggplot(alive_train, aes(x = age, y = is_alive)) + 
+  geom_count(
+    position = position_jitter(width = 0, height = 0.05), 
+    alpha = 0.5 ) + 
+  geom_smooth(method = "glm", method.args = list(family = "binomial"), 
+              color = "purple", lty = 2, se = FALSE) + 
+  geom_hline(aes(yintercept = 0.5), linetype = 3) 
+```
+
+
+*This plot is very similar to the plot for the entire data.*
+
 
 ## Model Prediction
 
@@ -190,20 +266,22 @@ The very next step is to generate the test predictions that we could use for mod
 # To get predicted values we use the function **predict**.
 
 ```{r}
-pred_class <- predict(logit_fit,
-                      new_data = callback_test,
+pred_class <- predict(logit_fit_train,
+                      new_data = alive_test,
                       type = "class")
-
-pred_prob <- predict(logit_fit,
-                      new_data = callback_test,
+pred_prob <- predict(logit_fit_train,
+                      new_data = alive_test,
                       type = "prob")
 
-joined_pred_results <- callback_test |>
-  select(received_callback) |>
+joined_pred_results <- alive_test |>
+  select(survived, is_alive) |>
   bind_cols(pred_class, pred_prob)
 ```
 
+
+
 ## Model performance
+
 
 **yardstick** is a package to get metrics on model performance. By default on classification problem yardstick::metrics returns accuracy and kappa.
 
@@ -211,94 +289,33 @@ https://yardstick.tidymodels.org/
 
 ```{r}
 library(yardstick)
-metrics(joined_pred_results, truth = received_callback, estimate = .pred_class)
+metrics(joined_pred_results, truth = survived, estimate = .pred_class)
 ```
 
-According to Wikipedia, *accuracy* is how close a given set of measurements (observations or readings) are to their true value.
+*The accuracy is only 65.3% and the kappa is very low at basically zero. A kappa of 1 means perfect agreement with the two categorical classifications, and a kappa of 0 means no agreement (no better than random assignment).*
 
-The accuracy of this model is 92.8%
+## The Confusion Matrix - Sensitivity and Specificity
 
-Accuracy is calculated by:
-
-(sensitivity+specificity)/(sensitivity+specificity+false_positive+false_negative)
-
-## kappa
-
-Kappa measures the model's reliability. It represents the extent to which the data collected in the study are correct representations of the variables measured.
-
-Since kap = 0, the model does not appear to be a good representation.
-
-## The null model
-
-It will be useful to have our null model stored as a model object. We can create such an object using tidymodels by specifying a logistic regression model with **no explanatory variables**.
+One common way to evaluate the quality of a logistic regression model is to create a confusion matrix, which is a 2×2 table that shows the actual values from the model vs. the predicted values from the testing set.
 
 ```{r}
-null_mod <- 
-  logistic_reg(mode = "classification") |>
-  set_engine("glm") |>
-  fit(received_callback ~ 1, data = callback_train)
-tidy(null_mod)
+conf_mat(joined_pred_results, truth = survived, estimate = .pred_class)
 ```
 
-## Compute the accuracy of the null model
+
+Find the sensitivity and specificity of the model.
 
 ```{r}
-pred <- callback_train |>  # use the training dataset
-  select(received_callback, years_experience) |> #select only these columns
-  bind_cols(predict(null_mod, new_data = callback_train, type = "class"))|>
-  rename(null_mod = .pred_class)
-
-accuracy(pred, received_callback, null_mod)
+sens <- sens(joined_pred_results, truth = survived, estimate = .pred_class)
+spec <- spec(joined_pred_results, truth = survived, estimate = .pred_class)
+rbind(sens, spec)
 ```
 
-The accuracy estimate of this null model is almost the same as the prior model: = 92.0%
+The sensitivity is too low and the sum of sens and spec is less than 0.98. So, this model does NOT look good as inspected above.
 
-## Create a confusion matrix
+## ROC Curve - Receiver Operator Characteristics
 
-This is a two-way table that counts how often our model made the correct prediction. Note that there are two different types of mistakes that our model can make: predicting receiving a callback when a callback was not received (a Type I error), and predicting not receiving a callback when the callback was received (a Type II error).
-
-```{r}
-confusion_null <- pred |>
-  conf_mat(truth = received_callback, estimate = null_mod)
-confusion_null
-```
-
-Note that the null model predicts that *NONE* do not receive a callback (receives_callback = 0), so it makes many *Type II errors* (false negatives) and *NONE* receive a callback (receives_callback = 1) *Type I errors* (false positives).
-
-## Build Logit Models and Predict
-
-Start by building the logit model using training data
-
-Beating the null model shouldn't be hard. Our first attempt will be to employ a simple logistic regression model. First, we'll fit the model using only one explanatory variable: years_experience. It stands to reason that more experienced people are more likely to get a job offer.
-
-*This is the same as the first model we built in base R at the beginning.*
-
-```{r}
-mod_log_1 <- 
-  logistic_reg(mode = "classification") |>
-  set_engine("glm") |>
-  fit(received_callback ~ years_experience, data = callback_train)
-tidy(mod_log_1)
-```
-
-## Illustrate the predicted probability
-
-Illustrate how the predicted probability of dying varies in our simple logistic regression model with respect to a person's age. Notice the sigmoid curve (in purple) - this is the shape of a logistic curve.
-
-```{r}
-train_plus <- callback_train |>
-  mutate(called = as.integer(received_callback == 1))
-
-ggplot(train_plus, aes(x = years_experience, y = called)) + 
-  geom_count(
-    position = position_jitter(width = 0, height = 0.05), 
-    alpha = 0.5 ) + 
-  geom_smooth(method = "glm", method.args = list(family = "binomial"), 
-              color = "purple", lty = 2, se = FALSE) + 
-  geom_hline(aes(yintercept = 0.5), linetype = 3) 
-```
-
-This still looks very similar to the original plot.
+Now, we will use the ROC curve along with its corresponding AUC (area under the curve) for the testing set. 
 
 ## ROC - Receiver Operating Characteristics
 
@@ -309,14 +326,14 @@ Receiver Operating Characteristics Curve traces the percentage of true positives
 The greater the area under the ROC curve, better the predictive ability of the model
 
 ```{r}
-roc_auc(bind_cols(callback_test, pred_prob), truth = received_callback, .pred_1)
+roc_auc(bind_cols(alive_test, pred_prob), survived, .pred_dead)
 
 ```
 
-The AUC estimate is 43.3% - this is VERY low, meaning the model is not great for predicting probabilities.
+*The AUC estimate is 55% - meaning the model does a moderate job of predicting survival 5 years after a heart transplant, based on age.*
 
 ```{r}
-roc_data <- roc_curve(bind_cols(callback_test, pred_prob), truth = received_callback, .pred_1) 
+roc_data <- roc_curve(bind_cols(alive_test, pred_prob), truth = survived, .pred_dead) 
 
 roc_data |>  
   ggplot(aes(x = 1 - specificity, y = sensitivity)) +
@@ -325,15 +342,16 @@ roc_data |>
   coord_equal()+
   ggtitle("ROC Curve")+
   theme_bw()+
-  geom_text(x=0.2, y=.8, label="AUC = 43%", color ="purple")
+  geom_text(x=0.2, y=.8, label="AUC = 53.7%", color ="purple")
 ```
+
 
 ## The Full Regression Model
 
 Computing the full logistic regression model will feel similar to the process for computing the full multiple linear regression model. We will use **GLM** to replace **LM** and we need to include **family = binomial()**
 
 ```{r}
-log_mod_full <- glm(data=resume, received_callback ~ job_city + college_degree + years_experience + honors + military + has_email_address + race + gender + computer_skills + resume_quality, family = binomial())
+log_mod_full <- glm(data=alive_train, is_alive ~ acceptyear + age + survtime + prior + transplant, family = binomial())
 summary(log_mod_full)
 ```
 
@@ -341,29 +359,19 @@ summary(log_mod_full)
 
 To evaluate the performance of a logistic regression model, we must consider few metrics: AIC and p-values.
 
-AIC (Akaike Information Criteria) -- The analogous metric of adjusted R² in logistic regression is AIC. AIC is the measure of fit which penalizes model for the number of model coefficients. Therefore, we always prefer model with **minimum** AIC value.
-
 ## Assessing our full model
 
-1.  The AIC is 2678
-2.  The largest p-values come from college_degree and resume_quality
+1.  The AIC is 35.871 (recall it was 67.79 in the simple model with only age as a predictor)
+2.  The largest p-values come from transplant and prior
 
-## Remove college_degree and resume_quality and re-run the model
+## Remove transplant and prior and re-run the model
 
 ```{r}
-log_mod2 <- glm(data=resume, received_callback ~ job_city + years_experience + honors + military + has_email_address + race + gender + computer_skills, family = binomial())
+log_mod2 <- glm(data=alive_train, is_alive ~ acceptyear + age + survtime, family = binomial()) 
 summary(log_mod2)
 ```
 
-The AIC decreased to 2675 and all p-values are relatively low. This could possibly be our best model.
-
-## Predicted  probability of receiving callbacks based on model predictors
-
-The augment() function on the model object will return a data frame with—among other things—the fitted values, with .fitted. Be sure to include type.predict = "response"
-
-```{r}
-augment(log_mod2, type.predict = "response")
-```
+*The AIC decreased to 36.278 and all p-values are relatively low.*
 
 
 ## VIF - Variance Inflation Factor
@@ -380,22 +388,13 @@ library(car)
 vif(log_mod2)
 ```
 
-All X variables in the model have VIF well below 4, so log_mod2 model does not appear to have multicollinearity.
-
-## Example for predicting
-
-Use this model(log_mod2) to estimate the probability of receiving a callback for: a job in Chicago where the candidate lists 14 years' experience, no honors, no military experience, includes an email address, has computer skills, and has a first name that implies they are a White male.
+Since acceptyear and survtime have VIF values \>5, remove one of the two.
 
 ```{r}
-# the log odds value of the above characteristics
--2.535-0.418+0.0196*14+0.269+0.437-0.239-0.242 
-
-# calculate the probability using the above value
-exp(-2.4536)/(1+exp(-2.4536))
+log_mod3 <- glm(data=alive_train, is_alive ~ acceptyear + age, family = binomial())
+summary(log_mod3)
 ```
 
-The probability of receiving a callback for a candidate looking at a job in Chicago with 14 years' experience, no honors, no military experience, included an email address, has computer skills, and has a first name that implies they are White male is 7.92%
+Although all variables have small p-values, the AIC went up.
 
-## Overall
-
-Although this tutorial goes through many concepts that are involved with logistic regression, one of the take-aways is that there are many components involved in building the model and then testing the model.
+*This tutorial does not come up with any definitive answer about a best model. Instead, it explores the many options and elements to include in a model and how to assess the model.*

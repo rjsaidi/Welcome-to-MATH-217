@@ -34,9 +34,10 @@ unique(nycflights$origin)
 ```{r}
 summarytable <- nycflights |>
   # Group by origin
-  group_by(origin, carrier) |>
+  group_by(origin) |>
   # Calculate the std dev of arrival delay as std_delay
-  summarize(mean_delay = mean(arr_delay), sd_delay = sd(arr_delay), median_delay = median(arr_delay), count = n())
+  #summarise(sd_delay = sd(arr_delay))
+  summarise(mean_delay = mean(arr_delay), sd_delay = sd(arr_delay), median_delay = median(arr_delay), count = n())
 summarytable
 ```
 
@@ -47,13 +48,33 @@ summarytable
 use this for all other calculations
 
 ```{r}
-set.seed(9357)
+set.seed(935)
 samp <- sample_n(nycflights, 200, replace = TRUE)
 head(samp)
 ```
 
+## Is there a difference in mean arrival delay among the 3 NYC airports?
 
-## Create density ridges plot to compare the 3 group distributions
+Ho: There is no difference in mean arrival delay among the three NYC airports.
+
+Ha: At least one airport's mean arrival delay is different.
+
+```{r}
+summarytable <- samp |>
+  # Group by origin
+  group_by(origin) |>
+  # Calculate the std dev of arrival delay as std_delay
+  #summarise(sd_delay = sd(arr_delay))
+  summarise(mean_delay = mean(arr_delay), sd_delay = sd(arr_delay), median_delay = median(arr_delay), count = n())
+summarytable
+```
+
+## Create boxplots density ridges plot to compare the 3 group distributions
+
+```{r}
+ggplot(samp, aes(origin, arr_delay, fill = origin)) +
+         geom_boxplot()
+```
 
 ```{r}
 # install the package ggridges
@@ -68,29 +89,30 @@ samp |>
 
 *Again, the distributions appear very similar.*
 
+
+```{r}
+samp |>
+  # Map wordsum to the x-axis and class to the y-axis
+  ggplot(aes(x = arr_delay)) +
+  # Add density ridges to the plot! 
+  geom_density(aes(fill = origin), alpha = 0.5) +
+  scale_fill_brewer(palette = "Dark2")
+```
+
+
 ```{r}
 # Run an analysis of variance on score vs. rank
-aov_delay_origin <- aov(arr_delay ~ origin, data = samp)
+aov_delay_origin <- aov(arr_delay ~ origin, data = samp) #y~x
 #summary(aov_delay_origin)
 # Tidy the model
 tidy(aov_delay_origin)
 ```
 
-```{r}
-# run the ANOVA on the original dataset and you get the opposite result
-# Run an analysis of variance on score vs. rank
-aov_delay_nyc <- aov(arr_delay ~ origin, data = nycflights)
-#summary(aov_delay_origin)
-# Tidy the model
-tidy(aov_delay_nyc)
-```
-
-
 ## Interpret the results
 
-For the original data, the p-value of the ANOVA test is very small. Therefore we reject the null. There is very strong evidence that at least one mean arrival delay from one of the 3 airport origins is different.
+BUT from a random sample, the p-value is very large, meaning we fail to reject the null. This suggests that simply having a large sample size will coerce an effect, when there really is no effect.
 
-BUT from a random sample, the p-value is very large, meaning we fail to reject the null. This suggests that simply having a large sample size will coerce an effect, when there really is no effect. 
+There is no compelling evidence that there is a difference in mean arrival delay among the different origins.
 
 ## Simulating samples under the null hypothesis
 
@@ -101,8 +123,8 @@ In the case of an ANOVA, the statistic we are interested in is the F-statistic. 
 We can calculate the F-statistic using the tools from the infer package we are familiar with. The only part that is new is the stat that we calculate. Here, we use the "F" statistic.
 
 ```{r}
-obs_stat <- nycflights |> 
-  specify(arr_delay ~ origin) |> 
+obs_stat <- samp |> 
+  specify(arr_delay ~ origin) |>  #y~x
   calculate(stat = "F")
 obs_stat
 ```
@@ -112,11 +134,12 @@ The next step is to simulate what we would expect for arrival delays to look lik
 Step 1: Write the values of arr_delay on 32735 index cards (one card per person). Step 2: Shuffle the cards and randomly split them into three new piles, of the same size as the original groups. Step 3: Calculate and record the test statistic: F-statistic Step 4: Repeat steps (1) and (2) 1000 to generate the sampling distribution of the difference in means under the null hypothesis. Step 5: Calculate p-value as the percentage of simulations where the test statistic is at least as extreme as the observed F-statistic
 
 ```{r}
-null_distr <- nycflights |>
+null_distr <- samp |>
  specify(arr_delay ~ origin) |> 
   hypothesize(null = "independence") |> 
-  generate(reps = 500, type = "permute") |> 
+  generate(reps = 1000, type = "permute") |> 
   calculate(stat = "F")
+null_distr
 ```
 
 ```{r}
@@ -125,37 +148,14 @@ null_distr |>
   shade_p_value(obs_stat = obs_stat, direction = "greater")
 ```
 
-*We can see that the observed F-statistic is very far above the F distribution. therefore we reject the null. There is very strong evidence that the mean arrival delay is different at at least one airport.*
-
-
-## Try all of that again, but use the small sample
 
 ```{r}
-obs_stat_samp <- samp |> 
-  specify(arr_delay ~ origin) |> 
-  calculate(stat = "F")
-obs_stat_samp
+pvalue <- get_p_value(null_distr, obs_stat, direction = "greater")
+pvalue
 ```
 
 
-
-```{r}
-null_distr_samp <- samp |>
- specify(arr_delay ~ origin) |> 
-  hypothesize(null = "independence") |> 
-  generate(reps = 500, type = "permute") |> 
-  calculate(stat = "F")
-```
-
-```{r}
-null_distr_samp |> 
-  visualise() +
-  shade_p_value(obs_stat = obs_stat_samp, direction = "greater")
-```
-
-*Again, we get the opposite effect. This means sampling is incredibly important!!!!*
-
-
+*We can see that the observed F-statistic is very close to zero. therefore we fail to reject the null. There is no compelling evidence that the mean arrival delay is different at at least one airport.*
 
 ## Post hoc testing
 
@@ -164,30 +164,113 @@ If you reject the null, now you can determine by pair-wise testing which group's
 There are many pairwise tests. We will use the TukeyHSD test on our original model, aov_delay_origin.
 
 ```{r}
-TukeyHSD(aov_delay_nyc)
+TukeyHSD(aov_delay_origin)
 ```
 
 ## How to read this output
 
-The p-adjusted values for comparing mean delays for JFK and EWR are significant The p-adjusted values for comparing mean delays for LGA and EWR are significant The p-adjusted values for comparing mean delays for LGA and JFK are not significant.
+The p-adjusted values for comparing mean delays for JFK and EWR are not significant. The p-adjusted values for comparing mean delays for LGA and EWR are not significant. The p-adjusted values for comparing mean delays for LGA and JFK are not significant.
 
-
-## Non-parametric test Kruskall wallis Test
+## Non-parametric test Kruskal Wallis Test
 
 ```{r}
-ktest_nyc <- kruskal.test(arr_delay ~ origin, data = nycflights)
-ktest_nyc
-
 # and on the sample
-ktest_samp <- kruskal.test(arr_delay ~ origin, data = samp)
+ktest_samp <- kruskal.test(arr_delay ~ origin, data = samp) #syntax is y~x
 ktest_samp
 ```
 
+*The conclusion is: With a large p-value, we fail to reject the null. There is no compelling evidence that there is a difference in distributions for arrival delays based on the airport of origin in NY.*
 
+## Post hoc test for Kruskal Wallis test
 
+If your p-value is small for the ktest (at least one group's distribution is shifted), the post-hoc test is the Dunn Test.
 
+```{r}
+library(dunn.test)
+dunn.test(samp$arr_delay, samp$origin) # syntax is dunn.test(df$y, df$x)
+```
 
+## Here is an example where we reject the null
 
+Use the fastfood dataset from openintro
 
+```{r}
+# from openintro
+data(fastfood)
+head(fastfood)
+```
 
+## Is there a difference in mean number of calories overall among the fast food restaurants?
 
+Ho: There is no difference in overall mean number of calories among the fast food restaurants.
+
+Ha: At least one restaurant's overall mean number of calories is different among the fast food restaurants.
+
+```{r}
+unique(fastfood$restaurant)
+```
+
+## There are 8 fast food restaurants.
+
+## Check the basic conditions. First, create a table of counts.
+
+```{r}
+fast <- fastfood|>
+group_by(restaurant) |>
+summarise(mean_calorie = mean(calories), sd_calories = sd(calories), count = n())
+fast
+```
+
+## Check the distributions of calories over the restaurants with ridge plots
+
+```{r}
+library(ggridges)
+ggplot(fastfood, aes(x=calories, y=restaurant))+
+  geom_density_ridges(aes(fill = restaurant), alpha = 0.5) +
+  scale_fill_brewer(palette = "Dark2")
+```
+
+*We can see that the all the distributions of calories are right skewed, but they do seem a bit different.*
+
+## Since the basic conditions may have been met, we can use ANOVA test.
+
+Alternatively, we could use Kruskal Wallis test (below)
+
+```{r}
+aov_calories <- aov(calories ~ restaurant, data = fastfood)
+tidy(aov_calories)
+```
+
+*The p value is very small. Reject the null. At least one restaurant's mean overall calories is different.*
+
+## Perform the TukeyHSD post-hoc test for pairwise comparisons
+
+```{r}
+TukeyHSD(aov_calories)
+```
+
+\*Look for each of the pairwise comparisons that have small p-adj values. Those are the pairs with meaningfully different overall calories.
+
+```{r}
+# Chick Fil-A-Burger King -224.126984 -412.46039 -35.793574 0.0077024
+# Taco Bell-Burger King   -164.919255 -290.94531 -38.893203 0.0019839
+# Mcdonalds-Chick Fil-A    255.906433   61.68697 450.125891 0.0017798
+# Sonic-Chick Fil-A        247.253669   50.69256 443.814773 0.0036044
+# Subway-Mcdonalds        -137.330044 -276.33973   1.679647 0.0555520
+# Taco Bell-Mcdonalds     -196.698703 -331.36232 -62.035084 0.0002868
+# Taco Bell-Sonic         -188.045939 -326.06536 -50.026521 0.0010247
+```
+
+## Perform the same test using the non-parametric approach
+
+```{r}
+ktest <- kruskal.test(calories ~ restaurant, data =fastfood)
+ktest
+```
+
+*Note the small pvalue. Reject the null. At least one restaurant's distribution of calories is different.*
+
+```{r}
+library(dunn.test)
+dunn.test(fastfood$calories, fastfood$restaurant)
+```
