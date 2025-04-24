@@ -7,9 +7,10 @@ toc: true
 
 ## Load library tidyverse and heart transplant dataset
 
-[![https://www.mayoclinic.org/tests-procedures/heart-transplant/about/pac-20384750](heart transplant.JPG){width="483"}](https://www.mayoclinic.org/tests-procedures/heart-transplant/about/pac-20384750)
+[![https://www.mayoclinic.org/tests-procedures/heart-transplant/about/pac-20384750](heart%20transplant.JPG){width="483"}](https://www.mayoclinic.org/tests-procedures/heart-transplant/about/pac-20384750)
 
 Load libraries and use "data" and "head" to view the variables in the dataset
+
 
 ```{r message=FALSE, warning=FALSE}
 library(tidyverse)
@@ -29,7 +30,8 @@ unique(heart$survived)
 ## List all variables in the dataset
 
 ```{r}
-names(heart)
+names(heart) <- tolower(names(heart))
+names(heart) <- gsub(" ", "", names(heart)) # removes spaces in spaces in variable names
 ```
 
 ## Visualizing the data
@@ -73,8 +75,10 @@ $logit(p) = log(p/(1-p)) = \beta_0 + \beta_1*x$
 
 Fitting a GLM
 
+********don't forget the "family = binomial**************
+
 ```{r}
-fit1 <- glm(formula = is_alive ~ age, family = binomial, data = heart1)
+fit1 <- glm(formula = is_alive ~ age, family = binomial(), data = heart1)
 summary(fit1)
 ```
 
@@ -95,7 +99,6 @@ $\hat{y} = \frac{exp(\hat{\beta_0}+\hat{\beta_1}*x)}{1+exp(\hat{\beta_0}+\hat{\b
 
 Here, we compute the fitted probabilities using the augment() function.
 
-
 Set the type.predict argument to “response” to retrieve the **fitted values** on the familiar probability scale.
 
 ```{r}
@@ -105,14 +108,11 @@ heart_plus <- fit1 |>
 heart_plus
 ```
 
-
-
 ## Odds scale
 
 To combat the problem of the scale of the y variable, we can change the scale of the variable on the y-axis. Instead of thinking about the probability of receiving a callback, we can think about the odds. While these two concepts are often conflated, they are not the same. They are however, related by the simple formula below. The odds of a binary event are the ratio of how often it happens, to how often it doesn't happen.
 
 odds(y-hat)= y-hat / (1−y-hat) = exp(β_0+β_1⋅x)
-
 
 $odds\hat{y} = \frac{hat{y}{1-hat{y}}$
 
@@ -128,12 +128,9 @@ $OR = \frac{exp(\hat{\beta_0}+\hat{\beta_1}*(x+1))}{exp(\hat{\beta_0}+\hat{\beta
 exp(coef(fit1))
 ```
 
-
 The equation of the model is:
 
 log(odds)(is_alive) = 4.7797 + 0.9432(age).
-
-
 
 ## Example prediction
 
@@ -144,10 +141,6 @@ augment(fit1, newdata = age_70, type.predict = "response")
 ```
 
 *A 70 year old has a predicted probability of 7.39% survival five years after a heart transplant.*
-
-
-
-
 
 ## Confusion matrix
 
@@ -162,11 +155,7 @@ fit_plus |>
 
 One common way of assessing performance of models for a categorical response is via a confusion matrix. This simply cross-tabulates the reality (is_alive) with what our model predicted (alive_hat). In this case, our model predicted that 96 patients would die, and only 7 would live. Of those 96, 71 actually did die, while of the 7, 3 actually lived. Thus, our overall accuracy was 74 out of 103, or about 72%.
 
-
-
 # Use the **Tidymodels** package to create a regression model
-
-
 
 ## Create the training, testing, and validation data by splitting
 
@@ -177,8 +166,8 @@ set.seed(123)
 
 res_splits<- initial_split(heart1, strata = is_alive)
 
-alive_train <- training(res_splits)
-alive_test  <- testing(res_splits)
+alive_train <- training(res_splits) #default 75% 
+alive_test  <- testing(res_splits) # default 25%
 ```
 
 ## Calculate training set proportions by is_alive
@@ -190,12 +179,9 @@ alive_train |>
   mutate(prop = n/sum(n))
 ```
 
-
 *We can see that 72.8% are alive versus 27.2% are not alive 5 years after transplant surgery.*
 
 *This is called "imbalanced", which can lead to biased results. A biased sample can often cause a great amount of disorder to the analysis.*
-
-
 
 ## Fitting Logistic Regression
 
@@ -217,14 +203,11 @@ logit_fit_train <-
 logit_fit_train
 ```
 
-
 *This model should be similar to the model we built using glm in the base R.*
 
-## The AIC (Akaike information criterion): assesses the model in comparison to other models; the lower this value, the better the model.  
+## The AIC (Akaike information criterion): assesses the model in comparison to other models; the lower this value, the better the model.
 
 *This first training model shows AIC: 81.76 which is better than the AIC of 117 from the full dataset.*
-
-
 
 ## Odds Ratio
 
@@ -237,7 +220,6 @@ you can get directly the odds ratios of the coefficient by supplying the exponen
 ```{r}
 tidy(logit_fit_train, exponentiate = TRUE)
 ```
-
 
 ## Illustrate the predicted probability
 
@@ -253,9 +235,7 @@ ggplot(alive_train, aes(x = age, y = is_alive)) +
   geom_hline(aes(yintercept = 0.5), linetype = 3) 
 ```
 
-
 *This plot is very similar to the plot for the entire data.*
-
 
 ## Model Prediction
 
@@ -269,6 +249,7 @@ The very next step is to generate the test predictions that we could use for mod
 pred_class <- predict(logit_fit_train,
                       new_data = alive_test,
                       type = "class")
+
 pred_prob <- predict(logit_fit_train,
                       new_data = alive_test,
                       type = "prob")
@@ -278,10 +259,7 @@ joined_pred_results <- alive_test |>
   bind_cols(pred_class, pred_prob)
 ```
 
-
-
 ## Model performance
-
 
 **yardstick** is a package to get metrics on model performance. By default on classification problem yardstick::metrics returns accuracy and kappa.
 
@@ -302,6 +280,10 @@ One common way to evaluate the quality of a logistic regression model is to crea
 conf_mat(joined_pred_results, truth = survived, estimate = .pred_class)
 ```
 
+```{r}
+17/26
+```
+
 
 Find the sensitivity and specificity of the model.
 
@@ -315,7 +297,7 @@ The sensitivity is too low and the sum of sens and spec is less than 0.98. So, t
 
 ## ROC Curve - Receiver Operator Characteristics
 
-Now, we will use the ROC curve along with its corresponding AUC (area under the curve) for the testing set. 
+Now, we will use the ROC curve along with its corresponding AUC (area under the curve) for the testing set.
 
 ## ROC - Receiver Operating Characteristics
 
@@ -337,13 +319,14 @@ roc_data <- roc_curve(bind_cols(alive_test, pred_prob), truth = survived, .pred_
 
 roc_data |>  
   ggplot(aes(x = 1 - specificity, y = sensitivity)) +
-  geom_path() +
+  geom_smooth() +
   geom_abline(lty = 3) + 
   coord_equal()+
   ggtitle("ROC Curve")+
   theme_bw()+
   geom_text(x=0.2, y=.8, label="AUC = 53.7%", color ="purple")
 ```
+
 
 
 ## The Full Regression Model
@@ -354,6 +337,26 @@ Computing the full logistic regression model will feel similar to the process fo
 log_mod_full <- glm(data=alive_train, is_alive ~ acceptyear + age + survtime + prior + transplant, family = binomial())
 summary(log_mod_full)
 ```
+
+
+Ho: Survival is independent of the treatment or control
+Ha: """"" is not independent """
+
+
+```{r}
+chisq.test(heart1$transplant, heart1$survived)
+```
+
+
+
+
+
+```{r}
+log_mod_full <- glm(data=heart1, is_alive ~ acceptyear + age + survtime + prior + transplant, family = binomial())
+summary(log_mod_full)
+```
+
+
 
 ## Performance of Logistic Regression Model
 
@@ -372,7 +375,6 @@ summary(log_mod2)
 ```
 
 *The AIC decreased to 36.278 and all p-values are relatively low.*
-
 
 ## VIF - Variance Inflation Factor
 

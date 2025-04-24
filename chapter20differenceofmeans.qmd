@@ -10,6 +10,8 @@ editor: visual
 ## load the libraries and dataset
 
 ```{r}
+#| message: false
+#| warning: false
 library(tidyverse)
 library(openintro)
 library(tidymodels)
@@ -26,7 +28,7 @@ Use a side-by-side boxplot to compare the two groups' distributions
 ```{r}
 ggplot(births14, aes(x=habit, y=weight, fill = habit))+
   geom_boxplot()+
-  geom_jitter(alpha = .2)
+  geom_jitter(alpha = .1)
 ```
 
 Notice there are some na values. Let's remove those.
@@ -43,6 +45,10 @@ ggplot(births14_a, aes(x=habit, y=weight, fill = habit))+
   geom_jitter(alpha = .2)
 ```
 
+## Check sample sizes are sufficiently large
+
+this will check the basic assumptions for t-test
+
 ```{r}
 births_table <- births14_a |>
   group_by(habit) |>
@@ -53,8 +59,8 @@ births_table
 ## Now replot, but use density plots
 
 ```{r}
-ggplot(births14_a, aes(weight, color = habit))+
-  geom_density()
+ggplot(births14_a, aes(weight, fill = habit))+
+  geom_density(alpha = .2)
 ```
 
 *We can see the density plots are skewed left, but the sample size is 981, so it passes the CLT)*
@@ -63,25 +69,30 @@ ggplot(births14_a, aes(weight, color = habit))+
 
 Use a t.test for difference of means to compare mean birth weights of babies born to smoking mothers versus non-smoking mothers.
 
-Use the syntax: t.test(y \~ x)
+Use the syntax: t.test(y ~ x)
 
 ```{r}
 t.test(births14_a$weight ~ births14_a$habit)
 ```
 
+## Conclusion
+
+Reject the null. There is very strong evidence that the mean birthweight for newborns is different between smoking and non-smoking mothers. 
+
+
 **t = 3.8166, df = 131.31, p-value = 0.0002075**
 
 ## Alternate code using t_test
 
-
 ```{r}
 # use package: infer (in tidymodels)
-births14_a |> 
+t_test <- births14_a |> 
   t_test(response = weight,
          explanatory = habit,
          null = 0, 
          alternative = "two-sided", 
          conf_int = TRUE)
+t_test
 ```
 
 ## Alternate code using randomization
@@ -198,7 +209,7 @@ head(stem)
 Side-by-side boxplots
 
 ```{r}
-ggplot(stem, aes(trmt, diff))+
+ggplot(stem, aes(x=trmt, y=diff))+
   geom_boxplot()+
   geom_jitter(alpha = .5)
 ```
@@ -206,8 +217,8 @@ ggplot(stem, aes(trmt, diff))+
 histograms/density plots
 
 ```{r}
-ggplot(stem, aes(diff, color = trmt))+
-  geom_density()
+ggplot(stem, aes(diff, fill = trmt))+
+  geom_density(alpha = .2)
 ```
 
 ## When checking the basic assumptions, check the distribution AND the sample sizes
@@ -219,7 +230,6 @@ stem |>
 ```
 
 *We can see the sample sizes are VERY small. We need to use a non-parametric approach.*
-
 
 ## Non-parametric approach (not computing the means)
 
@@ -233,4 +243,4 @@ Alternative: There is a shift in distributions between the control and treatment
 wilcox.test(stem$diff ~ stem$trmt,  conf.int = TRUE, conf.level = 0.95,) #y~x
 ```
 
-*Conclusion: Because the p-value is very small, there is a right shift in the difference in heat pumping capcity between treatment for the ESC group over the control group.*
+*Conclusion: Because the p-value is very small, there is a right shift in the difference in heart pumping capacity between treatment for the ESC group over the control group.*

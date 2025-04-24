@@ -13,11 +13,11 @@ library(kableExtra)
 library(tidymodels)
 library(openintro)
 data(sex_discrimination)
-sex_disc <- sex_discrimination
+sex_disc <- sex_discrimination # rename this dataset with a shorter name
 ```
 
 ```{r}
-unique(sex_disc$sex)
+unique(sex_disc$decision)
 ```
 
 ## This vignette will help you understand HT using tidymodels
@@ -173,6 +173,7 @@ pvalue <- get_p_value(decide_perm, decide_obs,  direction = "two-sided")
 pvalue
 ```
 
+
 ## If we wanted only a one-tail test, the resulting p-value is 1/2 the result above
 
 ```{r}
@@ -274,7 +275,7 @@ fprops_boot |>
 ```{r}
 # Calculate the same interval, more conveniently
 percentile_ci <- fprops_boot |> 
-  get_confidence_interval(level = 0.90)
+  get_ci(level = 0.95)
 percentile_ci
 ```
 
