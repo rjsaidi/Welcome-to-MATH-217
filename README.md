@@ -40,24 +40,8 @@ This is our introduction to probability and probability distributions for catego
 
 - Use these notes to get started:     [**Chapter 6 Notes - Intro to Data and R Studio**](./Math217_notes_ch6.pdf)
 
-## Unit 4 - Linear and Multiple Linear Regression
-This is our introduction to linear and multiple linear regression. Let's get started!
 
-- Use these notes to get started on linear regression:     [**Chapter 7 Notes - Linear Regression**](./Math217_notes_ch7.pdf)
-- Use these notes to get started on multiple linear regression:     [**Chapter 8 Notes - Mutliple Linear Regression**](./Math217_notes_ch8.pdf)
-- Use this quarto document to learn about linear and multiple linear regression:
-     - [Chapter 7-8 Quarto Document](./chapter7-8notes.qmd)
-
-## Unit 5 - Logistic Regression and ML
-This is our introduction to logistic regression and machine learning. Let's get started!
-
-- Use these notes to get started on logistic regression:     [**Chapter 9 Notes - Logistic Regression**](./Math217_notes_ch9.pdf)
-- Use this quarto document to learn about logistic regression:
-     - [Chapter 9 Quarto Document](./chapter9logisticregression.qmd)
-
-## Unit 6 - Exam 1
-
-## Unit 7 - Foundations for Inference
+## Unit 4 - Foundations for Inference
 This is our introduction to foundations for inference. Let's get started!
 
 - Use these notes to get started on hypothesis testing with randomization:     [**Chapter 11 Notes - Intro to Statistical Inference with Hypothesis Testing**](./Math217_notes_ch11.pdf)
@@ -65,14 +49,16 @@ This is our introduction to foundations for inference. Let's get started!
 - Use this quarto document to learn about linear and multiple linear regression:
      - [Chapter 11-12 Quarto Document](./chapter11-12statisticalinference.qmd)
 
-## Unit 8 - Foundations for Inference Continued
+## Unit 5 - Foundations for Inference Continued
 We continue to explore foundations for inference, modeling, and decision errors. Let's get started!
 
 - Use these notes to get started on inference with mathematical models:     [**Chapter 13 Notes - Inference Using Mathematical Models**](./Math217_notes_ch13.pdf)
 - Use this quarto document to learn about inference using mathematical models and understanding decision errors:
      - [Chapter 13-14 Quarto Document](./chapter13-14statisticalinference.qmd)
  
-## Unit 9 - Inference for Categorical Variables
+## Unit 6 - Exam 1
+ 
+## Unit 7 - Inference for Categorical Variables
 We will specifically explore statistical inference for categorical variables. Let's get started!
 
 - Use these notes to explore inference for single proportions:     [**Chapter 16 Notes - Inference for Single Proportions**](./Math217_notes_ch16.pdf)
@@ -80,7 +66,7 @@ We will specifically explore statistical inference for categorical variables. Le
 - Use this quarto document to learn about inference for single proportions:
      - [Chapter 16 Quarto Document](./chapter16single_prop.qmd)
  
-## Unit 10 - Inference for Categorical Variables
+## Unit 8 - Inference for Categorical Variables
 We will specifically explore statistical inference for two categorical variables. Let's get started!
 
 - Use these notes to explore inference for two proportions:     [**Chapter 17 Notes - Inference for Two Proportions**](./Math217_notes_ch17.pdf)
@@ -91,7 +77,7 @@ We will specifically explore statistical inference for two categorical variables
      - [Chapter 18 Quarto Document](./chapter18chisquare.qmd)
 
 
-## Unit 11 - Inference for Numerical Variables
+## Unit 9 - Inference for Numerical Variables
 We will specifically explore statistical inference for single quantitative variables. Let's get started!
 
 - Use these notes to explore inference for single numerical values:     [**Chapter 19 Notes - Inference for Single Numerical Values**](./Math217_notes_ch19.pdf)
@@ -99,7 +85,7 @@ We will specifically explore statistical inference for single quantitative varia
      - [Chapter 19 Quarto Document](./chapter19singlemean.qmd)
 
 
-## Unit 12 - Inference for Two or More Means
+## Unit 10 - Inference for Two or More Means
 We will specifically explore statistical inference for two or more quantitative variables. Let's get started!
 
 - Use these notes to explore inference for two quantitative variables:     [**Chapter 20 Notes - Inference for Two Numerical Values**](./Math217_notes_ch20.pdf)
@@ -109,6 +95,22 @@ We will specifically explore statistical inference for two or more quantitative 
 - Use these notes to explore inference for multiple group means and ANOVA:      [**Chapter 22 Notes - Inference for Multiple Group Means**](./Math217_notes_ch22.pdf)
 - Use this quarto document to learn about Chi Square Testing:
      - [Chapter 22 Quarto Document](./chapter22anova.qmd)
+ 
+## Unit 11 - Linear and Multiple Linear Regression
+This is our introduction to linear and multiple linear regression. Let's get started!
+
+- Use these notes to get started on linear regression:     [**Chapter 7 Notes - Linear Regression**](./Math217_notes_ch7.pdf)
+- Use these notes to get started on multiple linear regression:     [**Chapter 8 Notes - Mutliple Linear Regression**](./Math217_notes_ch8.pdf)
+- Use this quarto document to learn about linear and multiple linear regression:
+     - [Chapter 7-8 Quarto Document](./chapter7-8notes.qmd)
+ 
+## Unit 12 - Logistic Regression and ML
+This is our introduction to logistic regression and machine learning. Let's get started!
+
+- Use these notes to get started on logistic regression:     [**Chapter 9 Notes - Logistic Regression**](./Math217_notes_ch9.pdf)
+- Use this quarto document to learn about logistic regression:
+     - [Chapter 9 Quarto Document](./chapter9logisticregression.qmd)
+
  
 ## Unit 13 - Exam 2
 
