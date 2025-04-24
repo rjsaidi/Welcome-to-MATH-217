@@ -105,6 +105,7 @@ We will specifically explore statistical inference for two or more quantitative 
 - Use these notes to explore inference for two quantitative variables:     [**Chapter 20 Notes - Inference for Two Numerical Values**](./Math217_notes_ch20.pdf)
 - Use this quarto document to learn about inference for two proportions.
      - [Chapter 20 Quarto Document](./chapter20diffofmeans.qmd)
+- Use these notes to explore **Effect Size** computations: [**Chapter 20 Notes - Effect Size**](./Math217_notes_ch20_effect_size.pdf)
 - Use these notes to explore inference for multiple group means and ANOVA:      [**Chapter 22 Notes - Inference for Multiple Group Means**](./Math217_notes_ch22.pdf)
 - Use this quarto document to learn about Chi Square Testing:
      - [Chapter 22 Quarto Document](./chapter22anova.qmd)
