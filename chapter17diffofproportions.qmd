@@ -23,6 +23,10 @@ Let p be the proportion that are democrats.
 
 $H_o: p_f = p_m$ $H_a: p_f \neq p_m$
 
+Ho: Women and men join the democratic party at the same rates. 
+
+Ha: Women and men join the democratic party at different rates.
+
 We're curious to know: do men and women join the democratic party at different rates?
 
 Let's let p be the true proportion that join democrats.
@@ -52,16 +56,14 @@ We can convert these to proportions by adding the position equals "fill" argumen
 Sample proportions for males and females to identify with democrats - then calculate the difference of the proportions using d_hat
 
 ```{r}
-p_hats <- gss |>
+p_hats <- gss |>  # phat = sample proportion affiliated with dem party
   group_by(sex) |>
-  summarize(mean(partyid == "dem", na.rm = TRUE)) |>
+  filter(!is.na(partyid)) |>
+  summarize(mean(partyid == "dem")) |>
   pull()
-d_hat <- diff(p_hats)
-d_hat
-```
 
-```{r}
-?diff
+d_hat <- diff(p_hats)
+d_hat  # observed (sample) difference in proportions
 ```
 
 
@@ -81,57 +83,93 @@ The variable partyid = democratic is independent from the variable sex.
 
 ```{r}
 gss1 <- gss |>
+  filter(!is.na(partyid)) |>
   mutate(two_party = ifelse(partyid == "dem", "democrat", "not-democrat"))
 ```
 
 ## Do women and men have different political party affiliations?
 
+## Check basic assumptions
+
+np >= 10
+n(1-p) >= 10
+
+```{r}
+gss1 |>
+  group_by(sex) |>
+  count(two_party) |>
+  filter(two_party == "democrat")
+```
+
+*Because np and n(1-p) \>= 10, we have met the basic assumptions.*
+
 ## Build up a full null distribution
+
+- specify: syntax for difference of 2 groups is always  y ~ x
+
+- hypothesize: null = "independence"
+
+- generate:  type = "permute" (for hypothesis test for 2 groups)
+
+- calculate: stat = "diff in props", order = c("factor1", "factor2")
 
 ```{r}
 null <- gss1 |>
-  specify(two_party ~ sex, success = "democrat") |>
+  specify(two_party ~ sex, success = "democrat") |>   # y~x
   hypothesize(null = "independence") |>
-  generate(reps = 500, type = "permute") |>
+  generate(reps = 1000, type = "permute") |>
   calculate(stat = "diff in props", order = c("female", "male"))
 null
 ```
+
+
+```{r}
+obs_diff <- gss1 |>
+  specify(two_party ~ sex, success = "democrat") |>   # y~x
+  hypothesize(null = "independence") |>
+  calculate(stat = "diff in props", order = c("female", "male")) |>
+  pull()
+obs_diff
+```
+
 
 ## Plot a density curve
 
 ```{r}
 ggplot(null, aes(x = stat)) +
-  geom_histogram() +
-  geom_vline(xintercept = 0.06499, color = "red")
+  geom_density() +
+  geom_vline(xintercept = c(-obs_diff, obs_diff), color = "blue")
 ```
 
 *This distribution of data suggests that there may be a difference between sexes in proportion of affiliation to democrats with females at higher proportions than males..*
 
-## We need a p-value to determine the true effect.
+
+## alternative and efficient p-value calculation
 
 ```{r}
-# Compute two-tailed p-value
-pvalue <- null |>
-  summarize(
-    one_tailed_pval = mean(stat >= d_hat),
-    two_tailed_pval = 2 * one_tailed_pval) |>
-  pull(two_tailed_pval)
-pvalue
+p_value <- get_p_value(null, obs_diff, direction = "two-sided")
+p_value
 ```
 
 *The two-tailed p-value is 0.14. We fail to reject the null. There is no compelling evidence that there is a difference in proportions of females and males affiliated to the democratic party.*
 
 ## Create a 95% Bootstrap CI
 
+The center of the boostrap confidence interval is the observed difference in the proportions of males and females affiliated with the democratic party?
+
 ```{r}
+# to convert from scientific to standard notation for values
+#options(scipen = 0)
+
 # Create the bootstrap distribution
 boot <- gss1 |>
   # Specify the variables and success
   specify(two_party ~ sex, success = "democrat") |>
   # Generate 500 bootstrap reps
-  generate(reps = 500, type = "bootstrap") |>
+  generate(reps = 1000, type = "bootstrap") |>
   # Calculate the statistics
   calculate(stat = "diff in props", order = c("female", "male"))
+boot
 ```
 
 ```{r}
@@ -144,17 +182,25 @@ SE <- boot |>
 c(d_hat - 1.960 * SE, d_hat + 1.960 * SE)
 ```
 
+## alternative and efficient ci calculation
+
+```{r}
+ci <- get_ci(boot, level = .95)
+ci
+```
+
 *We are 95% confident that the true difference in proportions of male and female affiliation to the democratic party is between -1.19% and 14.79%. Because zero is included there is no compelling evidence that there is a difference in sex with respect to affiliation to the democratic party.*
+
+
 
 ## For your textbook homework prop.test()
 
 ```{r}
 #  prop.test(x = c(x1, x2), n = c(n1, n2)) # this defaults to 2-tailed test
 # this uses the Yates Continuity Correction
-prop.test(x = c(26, 10), n = c(120, 120))
+prop.test(x = c(505,500), n = c(44911,44925))
 ```
 
 ```{r}
 ?prop.test()
 ```
-
