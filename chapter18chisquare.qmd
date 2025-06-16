@@ -51,7 +51,6 @@ obs_table <- table(gss$college, gss$partyid)
 obs_table
 ```
 
-
 ```{r}
 # From previous step
 obs <- gss |>
@@ -61,16 +60,15 @@ obs <- gss |>
 obs
 ```
 
-## What is the DK? 
+## What is the DK?
 
-DK seems to be some anomaly that needs to be removed. 
+DK seems to be some anomaly that needs to be removed.
 
 ```{r}
 gss$partyid <- as.character(gss$partyid) |> 
   trimws() |> 
   as.factor() 
 ```
-
 
 ```{r}
 # Now check that DK is removed
@@ -89,52 +87,60 @@ obs |>
 
 ## Perform a chi-squre hypothesis test
 
+1. Calculate the observed Chi-Square statistic
+
+```{r}
+# calculate the observed statistic
+observed_indep_statistic <- gss |>
+  specify(partyid ~ college) |>
+  hypothesize(null = "independence") |>
+  calculate(stat = "Chisq")
+observed_indep_statistic
+```
+
+
 ```{r}
 # Create one permuted data set
-perm_1 <- gss |>
-  # Specify the variables of interest
-  specify(college ~ partyid) |>
-  # Set up the null
+perm_null <- gss |>
+  specify(partyid ~ college) |>
   hypothesize(null = "independence") |>
-  # Generate a single permuted data set
-  generate(reps = 1, type = "permute")
-perm_1
+  generate(reps = 1000, type = "permute") |>
+  calculate(stat = "Chisq")
+perm_null
 ```
 
 ```{r}
-# Visualize permuted data
-ggplot(perm_1, aes(x = partyid, fill = college)) +
-  # Add bar layer
-  geom_bar()
+perm_null |>
+  visualize() +
+  shade_p_value(observed_indep_statistic,
+    direction = "greater"
+  )
 ```
+
+
+## Compare to base R
 
 ```{r}
 # Compute chi-squared stat
-chisq.test(perm_1$partyid, perm_1$college)
+chisq.test(gss$partyid, gss$college)
 ```
 
 *With a p-value of 0.3608, there is no compelling evidence that there is an association between having a college degree or not and the political party affiliation.*
 
-
 ## Fisher's Exact Test
 
-When basic assumptions for Chi-Square test (expected cell counts >= 5) are violated, we can try using the comparable non-parametric Fisher's Exact Test.
+When basic assumptions for Chi-Square test (expected cell counts \>= 5) are violated, we can try using the comparable non-parametric Fisher's Exact Test.
 
-
-(rowtot C success)*(rowtot C failure) / (samplesize C truetotal)
+(rowtot C success)\*(rowtot C failure) / (samplesize C truetotal)
 
 ## Example Below
 
-      true  false  total
-     
-yes     4     3      7
-no     13     8     21
-total  17    11     28
-      
-FE  =  ((7 C 4)  * (21 C 13)) / (28 C 17)
+
+yes 4 3 7 no 13 8 21 total 17 11 28
+
+FE = ((7 C 4) \* (21 C 13)) / (28 C 17)
 
 ```{r}
 # fisher.test(v1, v2)
 fisher.test(gss$college, gss$partyid)
 ```
-
