@@ -17,7 +17,12 @@ data("gss")
 
 ## A question in two variables
 
-Does level of education have an association with political party affiliation?
+Does a college degree or not have an association with political party affiliation?
+
+Is having a college degree or not independent of political party affiliation?
+
+HO: Having a college degree or not is independent of political party affiliation
+Ha: Having a college degree or not is NOT independent of political party affiliation
 
 ## Chi Square
 
@@ -27,8 +32,7 @@ When we are looking at a two-way table, we can explore the $\chi^2$ distribution
 
 ```{r}
 # Visualize distribution
-gss |>
-  ggplot(aes(x = partyid, fill = college)) +
+ggplot(data = gss, aes(x = partyid, fill = college)) +
   # Add bar layer of proportions
   geom_bar(position = "fill")
 ```
@@ -65,6 +69,12 @@ obs
 DK seems to be some anomaly that needs to be removed.
 
 ```{r}
+new_df <- gss |>
+  filter(partyid != "DK")
+unique(new_df$partyid)
+```
+
+```{r}
 gss$partyid <- as.character(gss$partyid) |> 
   trimws() |> 
   as.factor() 
@@ -85,19 +95,32 @@ obs |>
   uncount(n)
 ```
 
+```{r}
+gss |>
+  group_by(partyid)|>
+  count(college)
+```
+
+## Base R approach
+
+```{r}
+chisq.test(gss$college, gss$partyid)$expected
+```
+
+
+
 ## Perform a chi-squre hypothesis test
 
-1. Calculate the observed Chi-Square statistic
+1.  Calculate the observed Chi-Square statistic
 
 ```{r}
 # calculate the observed statistic
 observed_indep_statistic <- gss |>
-  specify(partyid ~ college) |>
+  specify(partyid ~ college) |>   #y ~ x
   hypothesize(null = "independence") |>
   calculate(stat = "Chisq")
 observed_indep_statistic
 ```
-
 
 ```{r}
 # Create one permuted data set
@@ -117,6 +140,12 @@ perm_null |>
   )
 ```
 
+## calculate the p-value under tidymodels
+
+```{r}
+pvalue <- get_p_value(perm_null, observed_indep_statistic, direction = "two.sided")
+pvalue
+```
 
 ## Compare to base R
 
@@ -125,22 +154,24 @@ perm_null |>
 chisq.test(gss$partyid, gss$college)
 ```
 
-*With a p-value of 0.3608, there is no compelling evidence that there is an association between having a college degree or not and the political party affiliation.*
+*With a p-value of 0.3608, fail to reject the null. There is no compelling evidence that there is an association between having a college degree or not and the political party affiliation.*
+
+or
+
+*Whether or not a person has a college degree is independent of party affiliation.*
 
 ## Fisher's Exact Test
 
 When basic assumptions for Chi-Square test (expected cell counts \>= 5) are violated, we can try using the comparable non-parametric Fisher's Exact Test.
 
-(rowtot C success)\*(rowtot C failure) / (samplesize C truetotal)
+p-value = (rowtot C success)\*(rowtot C failure) / (samplesize C truetotal)
 
 ## Example Below
 
-
-yes 4 3 7 no 13 8 21 total 17 11 28
-
-FE = ((7 C 4) \* (21 C 13)) / (28 C 17)
 
 ```{r}
 # fisher.test(v1, v2)
 fisher.test(gss$college, gss$partyid)
 ```
+
+

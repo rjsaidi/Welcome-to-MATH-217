@@ -12,18 +12,23 @@ editor: visual
 Head lengths of brushtail possums follow a nearly normal distribution with mean 92.6 mm and standard deviation 3.6 mm.
 
 a.  Compute the Z scores for possums with head lengths of 95.4 mm and 85.8 mm.
+
 b.  A brushtail possum is found to have a head length of 85.8 mm. What percentile of possums have head lengths 85.8 mm or smaller?
+
+*pnorm(y-observation, mean, sd) - calculate the area under the curve (percentile) up to that y-obersvation*
+
 c.  A brushtail possum is found to have a head length of 95.4 mm. What percentile of possums have head lengths 95.4 mm or more?
 
 ```{r}
 # Answers 
 #a
 (95.4-92.6)/3.6
+(85.8-92.6)/3.6
 #b
 pnorm(85.8, mean = 92.6, sd = 3.6)
 #c
-1 - pnorm(95.4, mean = 92.6, sd = 3.6)
-#c (alternative code)
+1-pnorm(95.4, mean = 92.6, sd = 3.6)
+##c (alternative code)
 pnorm(95.4, mean = 92.6, sd = 3.6, lower.tail = FALSE)
 ```
 
@@ -44,6 +49,7 @@ openintro::normTail(m = 92.6, s = 3.6, U = 95.4)
 Head lengths of brushtail possums follow a nearly normal distribution with mean 92.6 mm and standard deviation 3.6 mm.
 
 a.  What possum head length is in the bottom 20th percentile?
+
 b.  What head length is in the top 5th percentile?
 
 ```{r}

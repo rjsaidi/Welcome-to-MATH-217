@@ -11,15 +11,15 @@ editor:
 
 Work with the possum data found in the OpenIntro datasets
 
-![Hanging baby possum: <https://www.scenichudson.org/viewfinder/the-opossum-a-surprising-n-y-fan-fave/>](Fall 2023/possum_hanging.JPG){fig-alt="https://www.scenichudson.org/viewfinder/the-opossum-a-surprising-n-y-fan-fave/" width="285"}
+![https://www.istockphoto.com/photos/cute-possum](Fall%202023/cute%20possum.png){width="370"}
 
 ## Load tidyverse, set the working directory, and read in the possum data
 
 ```{r message = FALSE, warning =FALSE}
 library(tidyverse)
 library(tidymodels)
-setwd("C:/Users/rsaidi/Dropbox/Rachel/MontColl/Datasets/Datasets")
-possum <- read_csv("possum_openintro.csv")
+library(openintro)
+data(possum)  # function "data" only works for pre-built datasets from packages
 ```
 
 ## Explore the possum dataset variables
@@ -43,7 +43,7 @@ ggplot(possum, aes(x=head_l, y=total_l))+
        caption = "Source: Lindenmayer, D. B. et al, 1995. Australian Journal of Zoology 43")
 ```
 
-We can see a positive association: as head length increases, total body length tends to increase as well.
+We can see a positive, moderate association: as head length increases, total body length tends to increase as well.
 
 ## Create a linear model to show this association
 
@@ -51,8 +51,10 @@ lm stands for linear model.
 The linear model form is: y \~ x
 
 ```{r}
-fit1 <- lm(data = possum, total_l ~ head_l) 
+fit1 <- lm(data = possum, total_l ~ head_l) #y~x
+#tidy(fit1)  # lose many details from the model output that you get with "summary"
 summary(fit1)
+cor(possum$head_l, possum$total_l)
 ```
 
 We can see that this linear equation is:
@@ -63,7 +65,9 @@ y-hat = mx + b total_l = 0.8337(head_l)+ 9.8882
 • The y-intercept is 9.8882 cm, meaning that when the head length is 0 cm, the total body length is 9.8882 cm.
 • The p-value for head_l to predict total_l is very small, and therefore head_l is an important predictor of total_l.
 • The p-value for the overall model is very small, so the model is meaningful.
+
 • Finally, the adjusted R\^2 is .4725.
+
 We will discuss the meaning of this value below.
 
 ## Adjusted
@@ -72,7 +76,7 @@ $R^2$
 
 **The adjusted** $R^2$ value may be interpreted as follows:
 
-**\_\_\_\_% of the variation in the observations may be explained by this model.**
+**_____% of the variation in the observations may be explained by this model.**
 
 *For this model, 47% of the variation in the observations may be explained by this model.*
 
@@ -81,7 +85,7 @@ $R^2$
 ```{r}
 ggplot(possum, aes(x=head_l, y=total_l))+
   geom_point() +
-  geom_smooth(method = "lm") +
+  geom_smooth(method = "lm") +   #lm = linear model
   theme_bw()+
   labs(x="Possum Head Length (cm)", 
        y="Possum Total Body Length (cm)",
@@ -97,7 +101,7 @@ We can remove it with: "se = FALSE"
 ```{r}
 ggplot(possum, aes(x=head_l, y=total_l))+
   geom_point() +
-  geom_smooth(method = "lm", se = FALSE) +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
   theme_bw()+
   labs(x="Possum Head Length (cm)", 
        y="Possum Total Body Length (cm)",
@@ -112,7 +116,7 @@ Add color and shape for the sex to distinguish males and females (sex is a categ
 ```{r}
 ggplot(possum, aes(x=head_l, y=total_l, color = sex))+
   geom_point(aes(shape = sex)) +
-  geom_smooth(method = "lm", se = FALSE) +
+  geom_smooth(method = "lm") +
   theme_bw()+
   labs(x="Possum Head Length (cm)", 
        y="Possum Total Body Length (cm)",
@@ -131,8 +135,8 @@ Values closer to zero are MORE transparent.
 
 ```{r}
 ggplot(possum, aes(x=head_l, y=total_l))+
-  geom_point(aes(color = age),alpha = 0.5) +
-  scale_color_gradient(low = "green",high = "purple",)+
+  geom_point(aes(color = age)) + # gradient can only be used to color numerical variable
+  scale_color_gradient(low = "green",high = "purple")+
   geom_smooth(method = "lm", se = FALSE) +
   theme_bw()+
   labs(x="Possum Head Length (cm)", 
@@ -142,6 +146,11 @@ ggplot(possum, aes(x=head_l, y=total_l))+
 ```
 
 ## Finally, plot the residuals
+
+```{r}
+# library(tidymodels)
+augment(fit1)
+```
 
 ```{r}
 ggplot(data = fit1,  aes(x = .fitted, y = .resid)) +
@@ -166,6 +175,10 @@ In this manner, we have depicted three variables---two numeric and one categoric
 Thus, this plot will enable us to visualize our parallel slopes model in the data space.
 
 ```{r}
+summary(possum$age)
+```
+
+```{r}
 newdata <- possum |>
   filter(age %in% c(3, 6))
 
@@ -179,6 +192,7 @@ plotage1
 
 ```{r}
 mod <- lm(total_l ~ head_l + factor(age), data = newdata)
+#tidy(mod)
 summary(mod)
 ```
 
@@ -210,8 +224,12 @@ What if we only wanted to predict total body length of the possums based on sex?
 We can use what is know as a "dummy variable" - a categorical variable - as a predictor of total body length.
 
 ```{r}
+?geom_jitter
+```
+
+```{r}
 ggplot(possum, aes(x=sex, y=total_l))+
-  geom_point()+
+  geom_jitter(width = 0.1, height = 0.1, alpha = .5)+
    theme_bw()+
   labs(x="Possum Sex", 
        y="Possum Total Body Length (cm)",
@@ -271,7 +289,7 @@ head(possum)
 ## Explore the variables in the dataset
 
 ```{r}
-names(possum)
+unique(possum$pop)
 ```
 
 There are only two types - "Vic" and "other"
@@ -285,12 +303,13 @@ There are only two types - "Vic" and "other"
 Use a correlation plot to explore the correlation among all variables.
 This correlation plot shows pairwise results, but in a heatmap of correlation values.
 
-```{r}
+```{r message=FALSE}
 #install.packages("GGally")
 library(GGally)
 #remove na values from age
 possum2 <- possum %>% filter(!is.na(age))
-ggpairs(possum2, c("age","head_l","skull_w","tail_l" ))
+ggpairs(possum2, c("site", "age", "head_l", "skull_w", "tail_l"))
+# paired scatterplots of all the potential predictor variables
 ```
 
 ## What does this matrix of plots show?
@@ -326,8 +345,28 @@ Perform a model fit with all predictors.
 
 3.  Check out the residual plots (we will do this in the second chunk below).
 
+## EDA - Exploratory Plots of numerical and categorical variables
+
 ```{r}
-full_model <- lm(data = possum, total_l ~ site + pop + sex + age + head_l + skull_w + tail_l)
+ggplot(data = possum2, aes(age)) +
+  geom_density()
+```
+
+```{r}
+ggplot(data = possum2, aes(pop)) +
+  geom_bar()
+```
+
+```{r}
+ggplot(data = possum2, aes(factor(site))) +
+  geom_bar()
+```
+
+```{r}
+#options(scipen = 999)
+possum2$site <- as.factor(possum2$site)
+# convert something from categorical to numerical data$variable <- as.integer(data$variable)
+full_model <- lm(data = possum2, total_l ~ site + pop + sex + age + head_l + skull_w + tail_l)
 summary(full_model)
 ```
 
@@ -339,11 +378,15 @@ Also look at the adjusted R-squared value: 0.7506.
 This means approximately 75% of the variation in the observations may be explained by this model.
 It is a good value, but we can possibly improve it.
 
+```{r}
+# diagnostic plots
+plot(full_model) # Base R
+```
+
 ## Now look at the diagnostic plots
 
 ```{r}
-#install.packages("ggfortify")
-library(ggfortify)  # this will run the autoplot function
+library(ggfortify) # you do actually need library ggfortify to use the function autoplot()
 autoplot(full_model, nrow=2, ncol=2)
 ```
 
@@ -360,6 +403,7 @@ autoplot(full_model, nrow=2, ncol=2)
 
 4.  Cook's Distance indicates which outliers have high leverage, meaning that some outliers may not cause the model to violate basic assumptions required for the regression analysis (see #1-3).
     If outliers have high leverage, then they may be causing problems for your model.
+
     You can try to remove those observations, especially if they appear in any of the other 3 plots above.
 
 **Generally, this model's diagnostic plots all indicate the model is pretty good. We will work to improve it now.**
@@ -369,16 +413,17 @@ autoplot(full_model, nrow=2, ncol=2)
 We will remove "age" from the model, rerun it, and then check the 3 indicators: p-values, Adj R-Squared, and diagnostic plots
 
 ```{r}
-full_2 <- lm(data = possum2, total_l ~ site + pop + sex + head_l + skull_w + tail_l)
+full_2 <- lm(data = possum2, total_l ~ site +  sex + head_l + skull_w + tail_l)
 summary(full_2)
-autoplot(full_2, nrow=2, ncol=2)
+#autoplot(full_2, nrow=2, ncol=2)
 ```
 
 ## Simplify further - remove pop and skull_w (esp since skull_w is collinear to head_l)
 
 ```{r}
-full_3 <- lm(data = possum2, total_l ~ site + sex + head_l + tail_l)
+full_3 <- lm(data = possum2, total_l ~ site + sex + head_l + tail_l) 
 summary(full_3)
+#autoplot(full_3)
 ```
 
 ## Parsimony
@@ -389,14 +434,6 @@ We can try one more time to remove "sex" from the model and check the adj r-squa
 ```{r}
 full_4 <- lm(data = possum2, total_l ~ site + head_l + tail_l)
 summary(full_4)
-```
-
-Because the adj r-squared decreased, this suggests the model is better with sex included.
-
-Therefore **full_3** would be the likely best model.
-
-```         
-        Estimate Std. Error t value Pr(>|t|)    
 ```
 
 (Intercept) -5.63525 5.97554 -0.943 0.348\
