@@ -5,6 +5,26 @@ format: docx
 editor: visual
 ---
 
+## ECMO Versus CMT treatment for newborn survival
+
+```{r}
+options(scipen = 999)
+died <- c(12, 5)
+lived <- c(18, 140)
+df <- data.frame(died, lived)
+chisq.test(df)
+```
+
+Difference of 2 group proportions test: S-F condition
+
+np \>= 10 n(1-p) \>= 10
+
+Chi-square test requires expected cell counts \>= 5 and we failed, we can use the Fisher Exact Test - non-parametric approach using combinatorics
+
+```{r}
+fisher.test(df)
+```
+
 ## Load the libraries and data
 
 ```{r}
@@ -21,8 +41,7 @@ Does a college degree or not have an association with political party affiliatio
 
 Is having a college degree or not independent of political party affiliation?
 
-HO: Having a college degree or not is independent of political party affiliation
-Ha: Having a college degree or not is NOT independent of political party affiliation
+HO: Having a college degree or not is independent of political party affiliation. Ha: Having a college degree or not is NOT independent of political party affiliation.
 
 ## Chi Square
 
@@ -97,19 +116,23 @@ obs |>
 
 ```{r}
 gss |>
-  group_by(partyid)|>
-  count(college)
+  group_by(college)|>
+  count(partyid)
 ```
 
 ## Base R approach
 
 ```{r}
-chisq.test(gss$college, gss$partyid)$expected
+chisq.test(gss$partyid, gss$college)
 ```
 
+## Try non-parametric fisher exact test
 
+```{r}
+fisher.test(gss$partyid, gss$college)
+```
 
-## Perform a chi-squre hypothesis test
+## Perform a chi-squre hypothesis test using tidymodels
 
 1.  Calculate the observed Chi-Square statistic
 
@@ -168,10 +191,7 @@ p-value = (rowtot C success)\*(rowtot C failure) / (samplesize C truetotal)
 
 ## Example Below
 
-
 ```{r}
 # fisher.test(v1, v2)
 fisher.test(gss$college, gss$partyid)
 ```
-
-
