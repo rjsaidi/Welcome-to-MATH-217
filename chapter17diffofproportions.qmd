@@ -21,9 +21,11 @@ Do women and men join democratic party at different rates?
 
 Let p be the proportion that are democrats.
 
-$H_o: p_f = p_m$ $H_a: p_f \neq p_m$
+$H_o: p_f = p_m$ 
 
-Ho: Women and men join the democratic party at the same rates. 
+$H_a: p_f \neq p_m$
+
+Ho: Women and men join the democratic party at the same rates.
 
 Ha: Women and men join the democratic party at different rates.
 
@@ -61,11 +63,10 @@ p_hats <- gss |>  # phat = sample proportion affiliated with dem party
   filter(!is.na(partyid)) |>
   summarize(mean(partyid == "dem")) |>
   pull()
-
+p_hats
 d_hat <- diff(p_hats)
 d_hat  # observed (sample) difference in proportions
 ```
-
 
 We can calculate the difference in these proportions by using our normal summarize method of calculating a proportion, but add in a group_by line to indicate we want to calculate that proportion for men and women separately. The result is a vector of two proportions. We take their difference with the diff function and save it as d-hats, which we learn is 0.064.
 
@@ -91,29 +92,28 @@ gss1 <- gss |>
 
 ## Check basic assumptions
 
-np >= 10
-n(1-p) >= 10
+np \>= 10 n(1-p) \>= 10
 
 ```{r}
 gss1 |>
   group_by(sex) |>
-  count(two_party) |>
-  filter(two_party == "democrat")
+  count(two_party) 
 ```
 
 *Because np and n(1-p) \>= 10, we have met the basic assumptions.*
 
 ## Build up a full null distribution
 
-- specify: syntax for difference of 2 groups is always  y ~ x
+- specify: syntax for difference of 2 groups is always y \~ x
 
 - hypothesize: null = "independence"
 
-- generate:  type = "permute" (for hypothesis test for 2 groups)
+- generate: type = "permute" (for hypothesis test for 2 groups)
 
 - calculate: stat = "diff in props", order = c("factor1", "factor2")
 
 ```{r}
+set.seed(9876)
 null <- gss1 |>
   specify(two_party ~ sex, success = "democrat") |>   # y~x
   hypothesize(null = "independence") |>
@@ -122,16 +122,13 @@ null <- gss1 |>
 null
 ```
 
-
 ```{r}
 obs_diff <- gss1 |>
   specify(two_party ~ sex, success = "democrat") |>   # y~x
-  hypothesize(null = "independence") |>
   calculate(stat = "diff in props", order = c("female", "male")) |>
   pull()
 obs_diff
 ```
-
 
 ## Plot a density curve
 
@@ -143,7 +140,6 @@ ggplot(null, aes(x = stat)) +
 
 *This distribution of data suggests that there may be a difference between sexes in proportion of affiliation to democrats with females at higher proportions than males..*
 
-
 ## alternative and efficient p-value calculation
 
 ```{r}
@@ -151,7 +147,7 @@ p_value <- get_p_value(null, obs_diff, direction = "two-sided")
 p_value
 ```
 
-*The two-tailed p-value is 0.14. We fail to reject the null. There is no compelling evidence that there is a difference in proportions of females and males affiliated to the democratic party.*
+*The two-tailed p-value is 0.168. We fail to reject the null. There is no compelling evidence that there is a difference in proportions of females and males affiliated to the democratic party.*
 
 ## Create a 95% Bootstrap CI
 
@@ -189,9 +185,7 @@ ci <- get_ci(boot, level = .95)
 ci
 ```
 
-*We are 95% confident that the true difference in proportions of male and female affiliation to the democratic party is between -1.19% and 14.79%. Because zero is included there is no compelling evidence that there is a difference in sex with respect to affiliation to the democratic party.*
-
-
+*We are 95% confident that the true difference in proportions of male and female affiliation to the democratic party is between -2.16% and 15.31%. Because zero is included there is no compelling evidence that there is a difference in democratic party affiliation with respect to sex.*
 
 ## For your textbook homework prop.test()
 

@@ -43,6 +43,7 @@ head(run17_1)
 
 ```{r}
 # create a vector of size 100 for minutes from 2017
+set.seed(1234)
 run17_samp <- sample_n(run17_1, size = 100, replace = TRUE)
 summary(run17_samp$minutes)
 ```
@@ -60,15 +61,15 @@ t.test(x, mu = something, alternative = "two.sided") t.test(x, mu = something, a
 t.test(run17_samp$minutes, mu = 93.29, alternative = "two.sided")
 ```
 
-*t = 2.1057, df = 99, p-value = 0.03776*
+*t = 2.1057, df = 99, p-value = 0.002341*
 
-*Reject the null. There is compelling evidence that the mean in 2017 is different from the mean in 2006.*
+*Reject the null. There is compelling evidence that the mean finishing time for the 10 mile Cherry Blossom race in 2017 is different from the mean in 2006.*
 
 CI Output
 
 95 percent confidence interval: 96.43506 103.08460
 
-*We are 95% confident that the true mean in 2017 is between 96.435 and 103.085 minutes.*
+*We are 95% confident that the true mean in 2017 is between 95.29317 and 102.26783 minutes.*
 
 mean of x 99.75983
 
@@ -157,7 +158,7 @@ t.test(samp_price$Sale_Price, conf.level = .95)  # defaults to null = 0
 
 *We are 95% confident that the mean sale price for homes in Ames, IA in 2010 is between \$155,019 and \$184,587.7.*
 
-##Answer the question:
+## Answer the question:
 
 Test to determine if the mean home sale price in Ames was different from the national average at that time from 2006-2010.
 

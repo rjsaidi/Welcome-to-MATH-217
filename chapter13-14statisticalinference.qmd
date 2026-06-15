@@ -15,21 +15,29 @@ a.  Compute the Z scores for possums with head lengths of 95.4 mm and 85.8 mm.
 
 b.  A brushtail possum is found to have a head length of 85.8 mm. What percentile of possums have head lengths 85.8 mm or smaller?
 
+
 *pnorm(y-observation, mean, sd) - calculate the area under the curve (percentile) up to that y-obersvation*
 
 c.  A brushtail possum is found to have a head length of 95.4 mm. What percentile of possums have head lengths 95.4 mm or more?
+
+d. What is the percentile of possums with head lengths BETWEEN 85.8 and 95.4 mm?
+
+Percentile MEANS cumulative area of the LEFT tail 
 
 ```{r}
 # Answers 
 #a
 (95.4-92.6)/3.6
 (85.8-92.6)/3.6
-#b
+#b   pnorm(cut off value of the left tail, mean, sd)
 pnorm(85.8, mean = 92.6, sd = 3.6)
 #c
 1-pnorm(95.4, mean = 92.6, sd = 3.6)
 ##c (alternative code)
 pnorm(95.4, mean = 92.6, sd = 3.6, lower.tail = FALSE)
+
+##d
+pnorm(95.4, 92.6, 3.6) - pnorm(85.8, 92.6, 3.6)
 ```
 
 ## To draw the pictures of these areas, use this code:
@@ -50,7 +58,9 @@ Head lengths of brushtail possums follow a nearly normal distribution with mean 
 
 a.  What possum head length is in the bottom 20th percentile?
 
-b.  What head length is in the top 5th percentile?
+b.  What head length is in the top 5th percentile? 
+
+"top 5th percentile" to "95th percentile"
 
 ```{r}
 # Answers: (note p must be a percentile, which means it represents area to the left of the cutoff)
@@ -59,3 +69,16 @@ qnorm(p=.20, m=92.6, s=3.6)
 #b
 qnorm(p=.95, m=92.6, s=3.6)
 ```
+
+## How to shade for qnorm?
+
+```{r}
+# be sure to install library package "asbio" before running this code
+
+library(asbio)
+# Shade the lower tail up to your qnorm value
+shade.norm(x = qnorm(0.20), tail = "lower")
+```
+
+
+

@@ -17,7 +17,7 @@ sex_disc <- sex_discrimination # rename this dataset with a shorter name
 ```
 
 ```{r}
-unique(sex_disc$decision)
+unique(sex_disc$sex)
 ```
 
 ## This vignette will help you understand HT using tidymodels
@@ -139,16 +139,29 @@ Although the plot will appear differently each time due to randomization, notice
 Ho:  p_m = p_f
 Ha:  p_m != p_f
 
-Ho: Prop of males not promoted is not different from the prop of females not promoted
+xbar to show sample mean
+phat to show sample proportion
+mu to show population mean
+
+Ho: Prop of males not promoted is equal to the prop of females not promoted
 Ha: Prop of males not promoted is different from the prop of females not promoted
 
 
+tidymodels has 4 functions
 
+* specify
+
+* hypothesize
+
+* generate
+
+* calculate
 
 
 ```{r}
 # Hypothesize independence (this test is used to compare difference of proportions)
 decide_perm <- sex_disc |>
+  # specify(y ~ x, y is categorical and x is also categorical)
   specify(decision ~ sex, success = "not promoted") |>  # syntax is y ~ x
   hypothesize(null = "independence") |>
   generate(reps = 1000, type = "permute") |> 
@@ -273,7 +286,7 @@ fprops_boot <- sex_disc |>
 fprops_boot
 ```
 
-Find an interval of values that are plausible for the true parameter by calculating p-hat±2SE
+Find an interval of values that are plausible for the true parameter by calculating p-hatB12SE
 
 The lower bound of the confidence interval is p_hat minus twice the standard error of stat. Use sd() to calculate the standard error. The upper bound is p_hat plus twice the standard error of stat.
 

@@ -253,6 +253,15 @@ f <- (2/3)*500
 f
 ```
 
+## count the s-f condition group sizes for GSS sample
+
+```{r}
+gss |>
+  group_by(college) |>
+  count()
+```
+
+
 *n=Notice the s-f condition has been met for this hypothesis test.*
 
 ## Calculate the sample proportion
@@ -270,11 +279,11 @@ p-hat = 0.348
 ## Using Tidymodels function to get the observed statistic (p-hat)
 
 ```{r}
-p_hat_tidy <- gss |>
+p_hat_obs <- gss |>
   specify(response = college, success = "degree")|>
   calculate(stat = "prop")|>
   pull()
-p_hat_tidy
+p_hat_obs
 ```
 
 
@@ -298,9 +307,9 @@ Add a vertical line (geom_vline) to indicate where p-hat lies on the curve.
 ggplot(null_dist, aes(x = stat)) +
   geom_density() +
   geom_vline(xintercept=1/3, color = "red", linetype = "dashed" ) + # center for hypothesis test
-  geom_text(x = 1/3, y = 7, color = "red", label = "null", size = 5)+
-  geom_vline(xintercept = p_hat, color = "cyan") + 
-  geom_text(x = p_hat, y = 5, color = "cyan", label = "p-hat", size = 5) +
+  geom_text(x = 1/3, y = 9, color = "red", label = "null", size = 5)+
+  geom_vline(xintercept = p_hat, color = "dodgerblue") + 
+  geom_text(x = p_hat, y = 5, color = "dodgerblue", label = "p-hat", size = 5) +
   theme_bw()
 ```
 
@@ -314,6 +323,27 @@ pvalue2
 
 
 *The p-value is very large, at 0.534. We fail to reject the null. There is no evidence that the proportion of US adults with a college degree is different than 1/3 the population.*
+
+## Steps for HT
+
+1. State the question to study.
+2. State the Ho and Ha (in sentences or symbolically)
+3. Check the S-F condition (check the basic assumptions to perform the test)
+4. Generate a null distribution and the observed statistics
+5. Create a visual of the distribution (density plot or other) indicate the statistic as an x-intercept (vline)
+6. Compute the p-value
+7. two-part conclusion: 
+- 1. Reject or fail to reject the null
+
+- 2. Describe the level of evidence and context of the study with the results from the p-value.
+
+
+
+
+
+
+
+
 
 
 

@@ -8,7 +8,7 @@ editor: visual
 ## ECMO Versus CMT treatment for newborn survival
 
 ```{r}
-options(scipen = 999)
+#options(scipen = 999)
 died <- c(12, 5)
 lived <- c(18, 140)
 df <- data.frame(died, lived)
@@ -41,7 +41,14 @@ Does a college degree or not have an association with political party affiliatio
 
 Is having a college degree or not independent of political party affiliation?
 
-HO: Having a college degree or not is independent of political party affiliation. Ha: Having a college degree or not is NOT independent of political party affiliation.
+HO: Having a college degree or not is independent of political party affiliation. 
+
+Ha: Having a college degree or not is NOT independent of political party affiliation.
+
+```{r}
+unique(gss$partyid)
+```
+
 
 ## Chi Square
 
@@ -78,8 +85,8 @@ obs_table
 # From previous step
 obs <- gss |>
   select(college, partyid) |>
-  tibble::as_tibble() |>
-  table()
+  group_by(college, partyid) |>
+  count()
 obs
 ```
 
@@ -89,13 +96,14 @@ DK seems to be some anomaly that needs to be removed.
 
 ```{r}
 new_df <- gss |>
-  filter(partyid != "DK")
+  #filter(partyid != "DK")   # != "not equal"
+  filter(!is.na(partyid))  # I had a dangling pipe operator on Thursday
 unique(new_df$partyid)
 ```
 
 ```{r}
 gss$partyid <- as.character(gss$partyid) |> 
-  trimws() |> 
+  trimws() |>  # trims white space
   as.factor() 
 ```
 
@@ -123,7 +131,8 @@ gss |>
 ## Base R approach
 
 ```{r}
-chisq.test(gss$partyid, gss$college)
+chisq.test(gss$partyid, gss$college)$expected
+fisher.test(gss$partyid, gss$college)
 ```
 
 ## Try non-parametric fisher exact test
@@ -140,7 +149,6 @@ fisher.test(gss$partyid, gss$college)
 # calculate the observed statistic
 observed_indep_statistic <- gss |>
   specify(partyid ~ college) |>   #y ~ x
-  hypothesize(null = "independence") |>
   calculate(stat = "Chisq")
 observed_indep_statistic
 ```
