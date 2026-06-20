@@ -1,6 +1,8 @@
 # Welcome-to-MATH-217
 Welcome to Statistics for Scientists. This site will include course materials, resources, and assignments. 
 
+**For those interested in using these course materials, feel free to contact me to gain access to a syllabus, chapter quizzes (and solutions), exams, and the course project.**
+
 ## Course Resources
 Resources that may be used throughout the MATH 217 course
 
