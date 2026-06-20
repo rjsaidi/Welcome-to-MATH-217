@@ -38,7 +38,7 @@ In this unit, you will learn about EDA and working with numerical data.
 ## Unit 3 - Intro to Probability and Probability Distributions
 This is our introduction to probability and probability distributions for categorical data. Let's get started!
 
-- Use these notes to get started:     [**Chapter 6 Notes - Intro to Data and R Studio**](./Math217_notes_ch6.pdf)
+- Use these notes to get started:     [**Chapter 6 Notes - Intro to Probability**](./Math217_notes_ch6.pdf)
 
 
 ## Unit 4 - Foundations for Inference
