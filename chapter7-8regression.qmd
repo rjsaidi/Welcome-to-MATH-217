@@ -1,7 +1,7 @@
 ---
 title: "Ch 7 and 8 linear(and multiple linear) regression"
 author: "Rachel Saidi"
-format: docx
+format: pdf
 editor: 
   markdown: 
     wrap: sentence
@@ -11,7 +11,7 @@ editor:
 
 Work with the possum data found in the OpenIntro datasets
 
-![https://www.istockphoto.com/photos/cute-possum](Fall%202023/cute%20possum.png){width="370"}
+[![](cute%20possum.jpg){width="443"}](https://www.istockphoto.com/photos/cute-possum)
 
 ## Load tidyverse, set the working directory, and read in the possum data
 
@@ -30,6 +30,14 @@ All variables are quantitative except "pop"
 ```{r}
 head(possum)
 ```
+
+## look at the distribution for head length
+
+```{r}
+ggplot(data = possum, aes(x=head_l)) +
+  geom_density()
+```
+
 
 ## Create a scatterplot of head length to total body length
 
@@ -54,12 +62,14 @@ The linear model form is: y \~ x
 fit1 <- lm(data = possum, total_l ~ head_l) #y~x
 #tidy(fit1)  # lose many details from the model output that you get with "summary"
 summary(fit1)
-cor(possum$head_l, possum$total_l)
+#cor(possum$head_l, possum$total_l)
 ```
 
 We can see that this linear equation is:
 
-y-hat = mx + b total_l = 0.8337(head_l)+ 9.8882
+y-hat = mx + b 
+
+total_l = 0.8337(head_l)+ 9.8882
 
 • This means that for each additional cm increase in head length, the total body length increases by 0.8337 cm.
 • The y-intercept is 9.8882 cm, meaning that when the head length is 0 cm, the total body length is 9.8882 cm.
@@ -76,7 +86,7 @@ $R^2$
 
 **The adjusted** $R^2$ value may be interpreted as follows:
 
-**_____% of the variation in the observations may be explained by this model.**
+**\_\_\_\_\_% of the variation in the observations may be explained by this model.**
 
 *For this model, 47% of the variation in the observations may be explained by this model.*
 
@@ -134,13 +144,14 @@ Alpha values go between zero and 1.
 Values closer to zero are MORE transparent.
 
 ```{r}
-ggplot(possum, aes(x=head_l, y=total_l))+
-  geom_point(aes(color = age)) + # gradient can only be used to color numerical variable
-  scale_color_gradient(low = "green",high = "purple")+
+ggplot(possum, aes(x=head_l, y=total_l, color = age))+
+  geom_point() + # gradient can only be used to color numerical variable
+  #scale_color_gradient(low = "orange",high = "purple")+
   geom_smooth(method = "lm", se = FALSE) +
   theme_bw()+
   labs(x="Possum Head Length (cm)", 
        y="Possum Total Body Length (cm)",
+       color = "Possum \nAge",
        title = "Scatterplot of Possum Head to Total Body Length",
        caption = "Source: Lindenmayer, D. B. et al, 1995. Australian Journal of Zoology 43")
 ```
