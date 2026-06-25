@@ -106,13 +106,17 @@ This is our introduction to linear and multiple linear regression. Let's get sta
 - Use this quarto document to learn about linear and multiple linear regression:
      - [Chapter 7-8 Quarto Document](./chapter7-8notes.qmd)
  
-## Unit 12 - Logistic Regression and ML
+## Unit 12 - Logistic Regression and machine learning (ML)
 This is our introduction to logistic regression and machine learning. Let's get started!
 
 - Use these notes to get started on logistic regression:     [**Chapter 9 Notes - Logistic Regression**](./Math217_notes_ch9.pdf)
 - Use this quarto document to learn about logistic regression:
      - [Chapter 9 Quarto Document](./chapter9logisticregression.qmd)
-
+- This document demonstrates how to use logistic regression and machine learning from beginning to end
+      - [Ineternational Stroke Trials Logistic Regression Exploration](./logistic_regression_IST.qmd)
+- Use this dataset: IST.csv
+      - [IST.csv](./IST.csv)
+      - [IST_variables.csv](./IST_varibles.csv)
  
 ## Unit 13 - Exam 2
 
