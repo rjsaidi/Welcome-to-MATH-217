@@ -114,7 +114,7 @@ This is our introduction to logistic regression and machine learning. Let's get 
      - [Chapter 9 Quarto Document](./chapter9logisticregression.qmd)
 - This document demonstrates how to use logistic regression and machine learning from beginning to end
       - [Ineternational Stroke Trials Logistic Regression Exploration](./logistic_regression_IST.qmd)
-- Use these two datasets: IST.csv and IST_variables)
+- Use these two datasets: IST.csv and IST_variables
       - [IST](./IST.csv)
       - [IST_variables](./IST_varibles.csv)
  
