@@ -116,7 +116,6 @@ This is our introduction to logistic regression and machine learning. Let's get 
       - [Ineternational Stroke Trials Logistic Regression Exploration](./logistic_regression_IST.qmd)
 - Use these two datasets: IST.csv and IST_variables)
       - [IST](./IST.csv)
-  
       - [IST_variables](./IST_varibles.csv)
  
 ## Unit 13 - Exam 2
