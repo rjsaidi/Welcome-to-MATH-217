@@ -1,0 +1,336 @@
+---
+title: "Logistic Regression"
+author: "Rachel Saidi"
+date: "5/7/2020"
+format: docx
+---
+
+## Load the IST Dataset (International Stroke Trial Database)
+
+<https://datashare.is.ed.ac.uk/handle/10283/128>
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(tidymodels)
+setwd("C:/Users/rsaidi/Dropbox/Rachel/MontColl/Datasets/Datasets")
+IST <- read_csv("IST.csv")
+IST_vars <- read_csv("IST variables.csv")
+# this csv defines the variables
+```
+
+## Create a table of survival based on sex
+
+Note: DIED == 0 means died and DIED == 1 means alive
+
+```{r}
+table(IST$SEX, IST$DIED)
+table(IST$SEX, IST$DIED) |> 
+  prop.table() # convert the table to proportions
+```
+
+## Just a bit of cleaning
+
+```{r}
+IST$RXASP <- as.factor(IST$RXASP)
+IST$RXHEP <- as.factor(IST$RXHEP)
+IST1 <- IST |>
+  drop_na(c(AGE, SEX, RXASP, RXHEP, DDIAGUN, DDIAGHA, DDIAGISC, RDEF1, RDEF2, RDEF3, RDEF4, RDEF5, RDEF6, RDEF7, RDEF8))
+```
+
+## Machine Learning
+
+```{r}
+set.seed(1234)
+IST_samp <- sample_n(IST1, size = 300, replace = TRUE)
+res_splits<- initial_split(IST_samp, strata = DIED)
+
+died_train <- training(res_splits) #default 75% 
+died_test  <- testing(res_splits) # default 25%
+```
+
+## Calculate training set proportions by is_alive
+
+```{r}
+died_train |>
+  group_by(DIED) |>
+  tally() |>
+  mutate(prop = n/sum(n))
+```
+
+## Fit a logistic regression full model
+
+Note there are 112 variables. We will only select the most important ones for the full model, knowing this is a biased approach.
+
+```{r}
+# fit1 <- glm(DIED ~ AGE + RXHEP + RXASP + DSTER + HOSPNUM + RATRIAL + RDEF4 + RDEF5 + RDEF6 + RDEF7 + RDEF8 + DDIAGISC + DDIAGHA + DDIAGUN + FAP,  family = binomial(), data = died_train)  #generalized linear model
+# summary(fit1)
+# one of the variables is causing a problem
+```
+
+## The problem is the FAP variable, so remove it
+
+```{r}
+fit2 <- glm(DIED ~ AGE + RXHEP + RXASP + DSTER + HOSPNUM + RATRIAL + RDEF4 + RDEF5 + RDEF6 + RDEF7 + RDEF8 + DDIAGISC + DDIAGHA + DDIAGUN,  family = binomial(), data = died_train)  #generalized linear model
+summary(fit2)
+```
+
+## Remove HOSPNUM
+
+```{r}
+fit3 <- glm(DIED ~ AGE + RXHEP + RXASP + DSTER + RATRIAL + RDEF4 + RDEF5 + RDEF6 + RDEF7 + RDEF8 + DDIAGISC + DDIAGHA + DDIAGUN,  family = binomial(), data = died_train)  #generalized linear model
+summary(fit3)
+```
+
+## Remove DDIAGUN
+
+```{r}
+fit4 <- glm(DIED ~ AGE + RXHEP + RXASP + DSTER + RATRIAL + RDEF4 + RDEF5 + RDEF6 + RDEF7 + RDEF8 + DDIAGISC + DDIAGHA,  family = binomial(), data = died_train)  #generalized linear model
+summary(fit4)
+```
+
+## Remove RXHEP (heparin prescription)
+
+```{r}
+fit5 <- glm(DIED ~ AGE + RXASP + DSTER + RATRIAL + RDEF4 + RDEF5 + RDEF6 + RDEF7 + RDEF8 + DDIAGISC + DDIAGHA, family = binomial(), data = died_train)  #generalized linear model
+summary(fit5)
+```
+
+## Remove RXASP (aspirin prescription)
+
+```{r}
+fit6 <- glm(DIED ~ AGE + DSTER + RATRIAL + RDEF4 + RDEF5 + RDEF6 + RDEF7 + RDEF8 + DDIAGISC + DDIAGHA, family = binomial(), data = died_train)  #generalized linear model
+summary(fit6)
+```
+
+## Remove DSTER (steroid prescription)
+
+```{r}
+fit7 <- glm(DIED ~ AGE + RATRIAL + RDEF4 + RDEF5 + RDEF6 + RDEF7 + RDEF8 + DDIAGISC + DDIAGHA, family = binomial(), data = died_train)  #generalized linear model
+summary(fit7)
+```
+
+## Remove RDEF4 and RDEF8
+
+```{r}
+fit8 <- glm(DIED ~ AGE + RATRIAL + RDEF5 + RDEF6 + RDEF7+ DDIAGISC + DDIAGHA, family = binomial(), data = died_train)  #generalized linear model
+summary(fit8)
+```
+
+## Remove RATRIAL and RDEF7
+
+```{r}
+fit9 <- glm(DIED ~ AGE + RDEF5 + RDEF6 + DDIAGISC + DDIAGHA, family = binomial(), data = died_train)  #generalized linear model
+summary(fit9)
+```
+
+## Remove RDEF6
+
+```{r}
+fit10 <- glm(DIED ~ AGE + RDEF5 + DDIAGISC + DDIAGHA, family = binomial(), data = died_train)  #generalized linear model
+summary(fit10)
+```
+
+### Result of the final model
+
+$log\frac{DIED}{(1-DIED)} = 0.198 + 0.024(Age) - 2.199(Hemianopia_{no}) - 1.365(Hemianopia_{yes}) -1.799(Ischaemic stroke_{yes}) - 1.663(Haemorrhagic stroke_{yes})$
+
+
+With AIC: 215.14
+
+## Summary of Feature Selection
+
+| Model | Variables | AIC |
+|---------------------|---------------------------------|------------------|
+| fit1 | AGE + RXHEP + RXASP + DSTER + HOSPNUM + RATRIAL + RDEF4 + RDEF5 + RDEF6 + RDEF7 + RDEF8 + DDIAGISC + DDIAGHA + DDIAGUN + FAP | model failed |
+| fit2 | AGE + RXHEP + RXASP + DSTER + HOSPNUM + RATRIAL + RDEF4 + RDEF5 + RDEF6 + RDEF7 + RDEF8 + DDIAGISC + DDIAGHA + DDIAGUN | 200.4 |
+| fit3 | AGE + RXHEP + RXASP + DSTER + RATRIAL + RDEF4 + RDEF5 + RDEF6 + RDEF7 + RDEF8 + DDIAGISC + DDIAGHA + DDIAGUN | 198.2 |
+| fit4 | AGE + RXHEP + RXASP + DSTER + RATRIAL + RDEF4 + RDEF5 + RDEF6 + RDEF7 + RDEF8 + DDIAGISC + DDIAGHA | 196.43 |
+| fit5 | AGE + RXASP + DSTER + RATRIAL + RDEF4 + RDEF5 + RDEF6 + RDEF7 + RDEF8 + DDIAGISC + DDIAGHA | 193.54 |
+| fit6 | AGE + DSTER + RATRIAL + RDEF4 + RDEF5 + RDEF6 + RDEF7 + RDEF8 + DDIAGISC + DDIAGHA | 191.55 |
+| fit7 | AGE + RATRIAL + RDEF4 + RDEF5 + RDEF6 + RDEF7 + RDEF8 + DDIAGISC + DDIAGHA | 189.97 |
+| fit8 | AGE + RATRIAL + RDEF5 + RDEF6 + RDEF7+ DDIAGISC + DDIAGHA | 186.96 |
+| fit9 | AGE + RDEF5 + RDEF6 + DDIAGISC + DDIAGHA | \*212.47 |
+| fit10 | AGE + RDEF5 + DDIAGISC + DDIAGHA | \*215.14 |
+
+
+## Sample Interpretation
+
+```{r}
+
+age_50 <- data.frame(AGE = 50, RDEF5 = "Y", DDIAGISC = "Y", DDIAGHA = "N")
+
+augment(fit10, newdata = age_50, type.predict = "response")
+augment(fit10, newdata = age_50, type.predict = "response")
+exp(0.15047)
+p = 1.16238/2.16238
+p
+```
+
+This means the odds of dying for a 50 year old with Hemianopia and ischaemic stroke:
+
+is:
+
+(p/1-p) = exp(0.15)
+
+(p/1-p) = 1.16238 \# Odds of dying for 55 a 55 year old in this population
+
+p = 1.16238/2.16238 = 0.5375466 \# Probability of dying for 50 year old in this population is 0.537 or 53.7%.
+
+## Create a confusion matrix manually
+
+- is_alive is the observed value
+- alive_hat is the predicted value
+
+```{r}
+fit_plus <- augment(fit10, type.predict = "response") |>
+  mutate(died_hat = round(.fitted))
+
+fit_plus |>
+  select(DIED, died_hat) |>
+  table()
+```
+
+## Manually calculate accuracy
+
+```{r}
+accuracy_new <- (156 + 27)/(156 + 27 + 27 + 15)
+accuracy_new
+```
+
+## The current accuracy of this training model is 81.3%
+
+## Illustrate the predicted probability
+
+Illustrate how the predicted probability of dying varies in our simple logistic regression model with respect to a person's age. Notice the sigmoid curve (in purple) - this is the shape of a logistic curve.
+
+```{r}
+ggplot(died_train, aes(x = AGE, y = DIED)) + 
+  geom_count(
+    position = position_jitter(width = 0, height = 0.05), 
+    alpha = 0.5 ) + 
+  geom_smooth(method = "glm", method.args = list(family = "binomial"), 
+              color = "purple", lty = 2, se = FALSE) + 
+  geom_hline(aes(yintercept = 0.5), linetype = 3) 
+```
+
+## Note the sigmoid curve increases as age increases
+
+The probability of dying increases with age.
+
+## Use tidymodels to build the model
+
+Create a categorical variable `died_class` that is Y/N for 1/0 for both the testing and training datasets
+
+```{r}
+died_train1 <- died_train |>
+  mutate(died_class = ifelse(DIED == 0, "No", "Yes"), .after = DIED)
+died_train1$died_class <- as.factor(died_train1$died_class)
+
+died_test1 <- died_test |>
+  mutate(died_class = ifelse(DIED == 0, "No", "Yes"), .after = DIED)
+died_test1$died_class <- as.factor(died_test1$died_class)
+
+logit_fit_train <- 
+  logistic_reg(mode = "classification") |>
+  set_engine(engine = "glm") |> 
+  fit(died_class ~ AGE + RDEF5 + DDIAGISC + DDIAGHA, family = binomial(), data = died_train1)
+logit_fit_train
+```
+
+## Model Prediction (tidymodel)
+
+Test Data Class Prediction
+
+The very next step is to generate the test predictions that we could use for model evaluation. To generate the class prediction (pos/ neg) we can use the predict function and supply the trained model object, test dataset and the type which is here “class” as we want the class prediction, not probabilities.
+
+# To get predicted values we use the function **predict**.
+
+```{r}
+pred_class <- predict(logit_fit_train,
+                      new_data = died_test1,
+                      type = "class")
+
+pred_prob <- predict(logit_fit_train,
+                      new_data = died_test1,
+                      type = "prob")
+
+joined_pred_results <- died_test1 |>
+   select(died_class, DIED) |>
+   bind_cols(pred_class, pred_prob)
+```
+
+## Model performance (tidymodel)
+
+**yardstick** is a package to get metrics on model performance. By default on classification problem yardstick::metrics returns accuracy and kappa.
+
+<https://yardstick.tidymodels.org/>
+
+```{r}
+library(yardstick)
+metrics(joined_pred_results, truth = died_class, estimate = .pred_class)
+```
+
+*Accuracy is about 73.3% and kappa is 0.17. A kappa of 1 means perfect agreement with the two categorical classifications, and a kappa of 0 means no agreement (no better than random assignment). This is relatively low but not zero.*
+
+## Sensitivity and Specificity (tidymodel)
+
+```{r}
+sens <- sens(joined_pred_results, truth = died_class, estimate = .pred_class)
+spec <- spec(joined_pred_results, truth = died_class, estimate = .pred_class)
+rbind(sens, spec)
+```
+
+*The sensitivity is high at 87.7% but specificity is very low at 27.8%.*
+
+## VIF - variance inflation factor (base R model)
+
+Values between 5-10 indicate collinearity
+
+```{r}
+#install.packages("car") for base R model
+library(car)
+vif(fit10)
+
+# vif for tidymodel
+base_fit <- extract_fit_engine(logit_fit_train)
+vif(base_fit)
+```
+
+\*All values are low between 1 and 2.
+
+## ROC Curve - Receiver Operator Characteristics
+
+Now, we will use the ROC curve along with its corresponding AUC (area under the curve) for the testing set.
+
+## ROC - Receiver Operating Characteristics
+
+Receiver Operating Characteristics Curve traces the percentage of true positives accurately predicted by a given logit model as the prediction probability cutoff is lowered from 1 to 0. For a good model, as the cutoff is lowered, it should mark more of actual 1's as positives and lesser of actual 0's as 1's. So for a good model, the curve should rise steeply, indicating that the TPR (Y-Axis) increases faster than the FPR (X-Axis) as the cutoff score decreases.
+
+## AUC - Area under the curve
+
+The greater the area under the ROC curve, better the predictive ability of the model
+
+```{r}
+roc_auc(bind_cols(died_test1, pred_prob), died_class, .pred_No)
+```
+
+*Area under the curve is 74.4%*
+
+```{r}
+roc_data <- roc_curve(bind_cols(died_test1, pred_prob), truth = died_class, .pred_No) 
+
+roc_data |>  
+  ggplot(aes(x = 1 - specificity, y = sensitivity)) +
+  geom_smooth() +
+  geom_abline(lty = 3) + 
+  coord_equal()+
+  ggtitle("ROC Curve")+
+  theme_bw()+
+  geom_text(x=0.2, y=.8, label="AUC = 74.4%", color ="purple")
+```
+
+
+
+## Final model
+
+$log\frac{DIED}{(1-DIED)} = 0.198 + 0.024(Age) - 2.199(Hemianopia_{no}) - 1.365(Hemianopia_{yes}) -1.799(Ischaemic stroke_{yes}) - 1.663(Haemorrhagic stroke_{yes})$
