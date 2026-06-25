@@ -11,7 +11,6 @@ toc: true
 
 Load libraries and use "data" and "head" to view the variables in the dataset
 
-
 ```{r message=FALSE, warning=FALSE}
 library(tidyverse)
 library(tidymodels)
@@ -27,11 +26,17 @@ heart <- heart_transplant #rename the dataset with a shorter name
 unique(heart$survived)
 ```
 
+```{r}
+ggplot(heart, aes(survived)) +
+  geom_bar()
+```
+
+
 ## List all variables in the dataset
 
 ```{r}
-names(heart) <- tolower(names(heart))
-names(heart) <- gsub(" ", "", names(heart)) # removes spaces in spaces in variable names
+names(heart) <- tolower(names(heart)) # makes variables lowercase
+names(heart) <- gsub(" ", "_", names(heart)) # removes spaces in spaces in variable names
 ```
 
 ## Visualizing the data
@@ -51,7 +56,7 @@ First, we have a technical problem, in that the levels of our response variable 
 
 ```{r}
 heart1 <- heart|>
-  mutate(is_alive = ifelse(survived == "alive", 1, 0))
+  mutate(is_alive = ifelse(survived == "alive", 1, 0)) # alive = 1, died = 0
 ```
 
 ## Visualize a binary response
@@ -60,7 +65,7 @@ We can then visualize our data_space. The vertical axis can now be thought of as
 
 ```{r}
 ggplot(data = heart1, aes(x = age, y = is_alive)) + 
-  geom_jitter(width = 0, height = 0.05, alpha = 0.5)
+  geom_jitter(width = 0, height = 0.05, alpha = 0.2)
 ```
 
 ## Generalized linear models
@@ -75,17 +80,17 @@ $logit(p) = log(p/(1-p)) = \beta_0 + \beta_1*x$
 
 Fitting a GLM
 
-********don't forget the "family = binomial**************
+\*\*\*\*\*\*\*\*don't forget the "family = binomial\*\*\*\*\*\*\*\*\*\*\*\*\*\*
 
 ```{r}
-fit1 <- glm(formula = is_alive ~ age, family = binomial(), data = heart1)
+fit1 <- glm(is_alive ~ age, family = binomial(), data = heart1)
 summary(fit1)
 ```
 
 ```{r}
 plot_log <- ggplot(data = heart1, aes(y = is_alive, x = age)) + 
   geom_jitter(width = .05, height = 0.05, alpha = 0.2) +
-  geom_smooth(method = "glm", color = "purple", method.args = list(family = "binomial"))
+  geom_smooth(method = "glm", color = "purple", method.args = list(family = "binomial"), se = FALSE)
 plot_log
 ```
 
@@ -114,7 +119,7 @@ To combat the problem of the scale of the y variable, we can change the scale of
 
 odds(y-hat)= y-hat / (1−y-hat) = exp(β_0+β_1⋅x)
 
-$odds\hat{y} = \frac{hat{y}{1-hat{y}}$
+$odds(\hat{y}) = \frac{\hat{y}}{1-\hat{y}}$
 
 Thus, if the probability of surviving is 70%, then the odds of surviving is .7/(1-.7) = .7/.3 = 7:3.
 
@@ -130,19 +135,45 @@ exp(coef(fit1))
 
 The equation of the model is:
 
-log(odds)(is_alive) = 4.7797 + 0.9432(age).
+(odds)(is_alive) = 4.7797 + 0.9432(age).
 
 ## Example prediction
 
-```{r}
-age_70 <- data.frame(age = 70, transplant = "treatment")
+predict survival for a 70 year old
 
-augment(fit1, newdata = age_70, type.predict = "response")
+```{r}
+fit2 <- glm(is_alive ~ age + transplant, family = binomial(), data = heart1)
+summary(fit2)
+```
+
+```{r}
+age_70_tr <- data.frame(age = 70, transplant = "treatment")
+age_70_cont <- data.frame(age = 70, transplant = "control")
+
+augment(fit2, newdata = age_70_tr, type.predict = "response")
+augment(fit2, newdata = age_70_cont, type.predict = "response")
 ```
 
 *A 70 year old has a predicted probability of 7.39% survival five years after a heart transplant.*
 
+predict survival for a 20 year old
+
+```{r}
+age_20_tr <- data.frame(age = 20, transplant = "treatment")
+age_20_con <- data.frame(age = 20, transplant = "control")
+
+augment(fit2, newdata = age_20_tr, type.predict = "response")
+augment(fit2, newdata = age_20_con, type.predict = "response")
+```
+
 ## Confusion matrix
+
+One common way to evaluate the quality of a logistic regression model is to create a confusion matrix, which is a 2×2 table that shows the actual values from the model vs. the predicted values from the testing set.
+
+Create a confusion matrix manually
+
+- is_alive is the observed value
+- alive_hat is the predicted value
 
 ```{r}
 fit_plus <- augment(fit1, type.predict = "response") |>
@@ -153,7 +184,14 @@ fit_plus |>
   table()
 ```
 
-One common way of assessing performance of models for a categorical response is via a confusion matrix. This simply cross-tabulates the reality (is_alive) with what our model predicted (alive_hat). In this case, our model predicted that 96 patients would die, and only 7 would live. Of those 96, 71 actually did die, while of the 7, 3 actually lived. Thus, our overall accuracy was 74 out of 103, or about 72%.
+```{r}
+accuracy_new <- (71 +3)/(71+4+25+3)
+accuracy_new
+```
+
+One common way of assessing performance of models for a categorical response is via a confusion matrix. This simply cross-tabulates the reality (is_alive) with what our model predicted (alive_hat).
+
+In this case, our model predicted that 96 patients would be not alive, and only 7 would be alive. Of those 96, 71 actually were not alive, while of the 7, 3 actually alive. Thus, our overall accuracy was 74 out of 103, or about 72%.
 
 # Use the **Tidymodels** package to create a regression model
 
@@ -161,9 +199,17 @@ One common way of assessing performance of models for a categorical response is 
 
 Initial_split creates a single binary split of the data into a training set and testing set (the default is 75% training 25% testing)
 
+## Fit 3 includes interaction term
+
+```{r}
+fit3 <- glm(is_alive ~ age + transplant + age*transplant, family = binomial(), data = heart1)
+summary(fit3)
+```
+
+## Machine Learning
+
 ```{r}
 set.seed(123)
-
 res_splits<- initial_split(heart1, strata = is_alive)
 
 alive_train <- training(res_splits) #default 75% 
@@ -181,7 +227,7 @@ alive_train |>
 
 *We can see that 72.8% are alive versus 27.2% are not alive 5 years after transplant surgery.*
 
-*This is called "imbalanced", which can lead to biased results. A biased sample can often cause a great amount of disorder to the analysis.*
+*This is called "class imbalance", which can lead to biased results. A biased sample can often cause a great amount of disorder to the analysis.*
 
 ## Fitting Logistic Regression
 
@@ -216,6 +262,10 @@ The interpretation of coefficients in the log-odds term does not make much sense
 The ODDS is the ratio of the probability of an event occurring to the event not occurring. When we take a ratio of two such odds it called Odds Ratio.
 
 you can get directly the odds ratios of the coefficient by supplying the exponentiate = True inside the tidy( ) function.
+
+```{r}
+exp(0.1006)
+```
 
 ```{r}
 tidy(logit_fit_train, exponentiate = TRUE)
@@ -255,8 +305,8 @@ pred_prob <- predict(logit_fit_train,
                       type = "prob")
 
 joined_pred_results <- alive_test |>
-  select(survived, is_alive) |>
-  bind_cols(pred_class, pred_prob)
+   select(survived, is_alive) |>
+   bind_cols(pred_class, pred_prob)
 ```
 
 ## Model performance
@@ -274,7 +324,7 @@ metrics(joined_pred_results, truth = survived, estimate = .pred_class)
 
 ## The Confusion Matrix - Sensitivity and Specificity
 
-One common way to evaluate the quality of a logistic regression model is to create a confusion matrix, which is a 2×2 table that shows the actual values from the model vs. the predicted values from the testing set.
+The **conf_mat** function automates creating a confusion matrix
 
 ```{r}
 conf_mat(joined_pred_results, truth = survived, estimate = .pred_class)
@@ -284,8 +334,7 @@ conf_mat(joined_pred_results, truth = survived, estimate = .pred_class)
 17/26
 ```
 
-
-Find the sensitivity and specificity of the model.
+## Find the sensitivity and specificity of the model.
 
 ```{r}
 sens <- sens(joined_pred_results, truth = survived, estimate = .pred_class)
@@ -327,8 +376,6 @@ roc_data |>
   geom_text(x=0.2, y=.8, label="AUC = 53.7%", color ="purple")
 ```
 
-
-
 ## The Full Regression Model
 
 Computing the full logistic regression model will feel similar to the process for computing the full multiple linear regression model. We will use **GLM** to replace **LM** and we need to include **family = binomial()**
@@ -338,25 +385,23 @@ log_mod_full <- glm(data=alive_train, is_alive ~ acceptyear + age + survtime + p
 summary(log_mod_full)
 ```
 
+## Consider Survival of Transplant Under Treatment versus Control
 
-Ho: Survival is independent of the treatment or control
+Notice in the above model, the p-value is large at .38928
+
+Ho: Survival is independent of the treatment or control 
+
 Ha: """"" is not independent """
 
-
 ```{r}
-chisq.test(heart1$transplant, heart1$survived)
+chisq.test(alive_train$transplant, alive_train$survived)
 ```
 
+\*The p-value is also large for the Chi Square Test, so we can remove "transplant"
 
 
 
-
-```{r}
-log_mod_full <- glm(data=heart1, is_alive ~ acceptyear + age + survtime + prior + transplant, family = binomial())
-summary(log_mod_full)
-```
-
-
+This likely means that there is a relationship between survival and the treatment, but not when in conjunction with other variables.
 
 ## Performance of Logistic Regression Model
 
